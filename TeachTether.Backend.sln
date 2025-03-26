@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeachTether.API", "API\TeachTether.API.csproj", "{399DC6C8-E853-49D2-B64C-5CFAAF5DC146}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeachTether.API", "TeachTether.API\TeachTether.API.csproj", "{399DC6C8-E853-49D2-B64C-5CFAAF5DC146}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeachTether.Domain", "Domain\TeachTether.Domain.csproj", "{BC8690A7-FD18-42FF-976B-7992ACB6F923}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeachTether.Domain", "TeachTether.Domain\TeachTether.Domain.csproj", "{BC8690A7-FD18-42FF-976B-7992ACB6F923}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeachTether.Infrastructure.Persistence", "TeachTether.Infrastructure.Persistence\TeachTether.Infrastructure.Persistence.csproj", "{9303A7C8-5386-493B-9EB4-77053726010D}"
 EndProject

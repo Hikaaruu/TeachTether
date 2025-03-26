@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Domain\TeachTether.Domain.csproj" />
+    <ProjectReference Include="..\TeachTether.Domain\TeachTether.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

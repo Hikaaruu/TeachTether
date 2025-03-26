@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TeachTether.Infrastructure.Persistence.Database;
+using TeachTether.Infrastructure.Persistence.Data;
 
 #nullable disable
 
 namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250325181413_InitialCreate")]
+    [Migration("20250326124607_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -418,7 +418,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
                     b.ToTable("Teachers");
                 });
 
-            modelBuilder.Entity("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", b =>
+            modelBuilder.Entity("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -517,7 +517,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -526,7 +526,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -541,7 +541,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -550,7 +550,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -610,7 +610,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("TeachTether.Domain.Entities.Guardian", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -649,7 +649,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("TeachTether.Domain.Entities.SchoolAdmin", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -658,7 +658,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 
             modelBuilder.Entity("TeachTether.Domain.Entities.SchoolOwner", b =>
                 {
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("TeachTether.Domain.Entities.SchoolOwner", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -673,7 +673,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("TeachTether.Domain.Entities.Student", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -688,7 +688,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TeachTether.Infrastructure.Persistence.Database.ApplicationUser", null)
+                    b.HasOne("TeachTether.Infrastructure.Persistence.Data.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("TeachTether.Domain.Entities.Teacher", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)

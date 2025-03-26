@@ -17,10 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\TeachTether.Infrastructure.Persistence\TeachTether.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 

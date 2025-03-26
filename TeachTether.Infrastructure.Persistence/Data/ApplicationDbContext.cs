@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TeachTether.Domain.Entities;
 using TeachTether.Infrastructure.Persistence.Data.Configurations;
 
-namespace TeachTether.Infrastructure.Persistence.Database
+namespace TeachTether.Infrastructure.Persistence.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {

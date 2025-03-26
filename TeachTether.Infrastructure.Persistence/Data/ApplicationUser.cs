@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace TeachTether.Infrastructure.Persistence.Database
+namespace TeachTether.Infrastructure.Persistence.Data
 {
     public class ApplicationUser : IdentityUser
     {

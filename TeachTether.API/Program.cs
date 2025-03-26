@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using TeachTether.Infrastructure.Persistence.Database;
+using TeachTether.Infrastructure.Persistence.Data;
 
-namespace API
+namespace TeachTether.API
 {
     public class Program
     {
@@ -11,7 +11,13 @@ namespace API
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend",
+                    policy => policy.WithOrigins("http://localhost:5173")
+                                    .AllowAnyMethod()
+                                    .AllowAnyHeader());
+            });
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -28,6 +34,8 @@ namespace API
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
             var app = builder.Build();
+
+            app.UseCors("AllowFrontend");
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

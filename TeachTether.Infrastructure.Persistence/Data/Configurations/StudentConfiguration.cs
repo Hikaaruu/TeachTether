@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using TeachTether.Domain.Entities;
-using TeachTether.Infrastructure.Persistence.Database;
 
 namespace TeachTether.Infrastructure.Persistence.Data.Configurations
 {
