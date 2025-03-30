@@ -1,28 +1,16 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using TeachTether.Domain.Entities;
 
 namespace TeachTether.Infrastructure.Persistence.Data
 {
     public class ApplicationUser : IdentityUser
     {
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string? MiddleName { get; set; } 
-        public Sex Sex { get; set; } 
-        public UserType UserType { get; set; } 
+        public override string? UserName { get; set; }
+        public required string FirstName { get; set; }
+        public required string LastName { get; set; }
+        public string? MiddleName { get; set; }
+        public Sex Sex { get; set; }
+        public UserType UserType { get; set; }
     }
 
-    public enum UserType
-    {
-        SchoolOwner,
-        SchoolAdmin,
-        Teacher,
-        Student,
-        Guardian
-    }
-
-    public enum Sex
-    {
-        M,
-        F
-    }
 }

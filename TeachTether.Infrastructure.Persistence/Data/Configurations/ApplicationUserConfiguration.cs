@@ -7,6 +7,10 @@ namespace TeachTether.Infrastructure.Persistence.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<ApplicationUser> builder)
         {
+            builder.Property(u => u.UserName)
+                .IsRequired()
+                .HasMaxLength(100);
+
             builder.Property(u => u.FirstName)
                 .IsRequired()
                 .HasMaxLength(100);

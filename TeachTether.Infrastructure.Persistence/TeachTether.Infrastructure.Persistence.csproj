@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TeachTether.Application\TeachTether.Application.csproj" />
     <ProjectReference Include="..\TeachTether.Domain\TeachTether.Domain.csproj" />
   </ItemGroup>
 
