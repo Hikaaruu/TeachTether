@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -18,19 +17,19 @@ namespace TeachTether.Application.Services
     {
         private readonly JwtSettings _jwtSettings;
         private readonly IUserRepository _userRepository;
-        private readonly ISchoolOwnerRepository _schoolOwnerRepository;
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
 
         public AuthService(
             IOptions<JwtSettings> jwtSettings,
-            ISchoolOwnerRepository schoolOwnerRepository,
             IUserRepository userRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IUnitOfWork unitOfWork)
         {
             _jwtSettings = jwtSettings.Value;
-            _schoolOwnerRepository = schoolOwnerRepository;
             _userRepository = userRepository;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<OperationResult> RegisterAsync(RegisterRequest request)
@@ -46,7 +45,8 @@ namespace TeachTether.Application.Services
                 {
                     UserId = user.Id!,
                 };
-                await _schoolOwnerRepository.AddAsync(schoolOwner);
+                await _unitOfWork.SchoolOwners.AddAsync(schoolOwner);
+                await _unitOfWork.SaveChangesAsync();
             }
 
             return result;

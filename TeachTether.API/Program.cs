@@ -71,7 +71,9 @@ namespace TeachTether.API
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
 
-            builder.Services.AddScoped<ISchoolOwnerRepository, SchoolOwnerRepository>();
+            builder.Services.AddScoped<ISchoolOwnerRepository, SchoolOwnerRepository>();     
+
+
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IAuthService, AuthService>();
 

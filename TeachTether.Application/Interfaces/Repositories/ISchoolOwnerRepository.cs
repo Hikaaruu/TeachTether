@@ -2,9 +2,8 @@
 
 namespace TeachTether.Application.Interfaces.Repositories
 {
-    public interface ISchoolOwnerRepository
+    public interface ISchoolOwnerRepository : IRepository<SchoolOwner>
     {
-        Task AddAsync(SchoolOwner schoolOwner);
-        Task UpdateAsync(SchoolOwner schoolOwner);
+
     }
 }

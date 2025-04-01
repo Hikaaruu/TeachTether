@@ -2,10 +2,8 @@
 
 namespace TeachTether.Application.Interfaces.Repositories
 {
-    public interface IClassGroupRepository
+    public interface IClassGroupRepository : IRepository<ClassGroup>
     {
-        Task AddAsync(ClassGroup classGroup);
-        Task UpdateAsync(ClassGroup classGroup);
         Task<IEnumerable<ClassGroup>> GetAllAsync(int schoolId);
     }
 }

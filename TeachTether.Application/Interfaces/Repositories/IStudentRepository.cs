@@ -2,10 +2,8 @@
 
 namespace TeachTether.Application.Interfaces.Repositories
 {
-    public interface IStudentRepository
+    public interface IStudentRepository : IRepository<Student>
     {
-        Task AddAsync(Student student);
-        Task UpdateAsync(Student student);
         Task<IEnumerable<Student>> GetAllAsync(int schoolId);
     }
 }
