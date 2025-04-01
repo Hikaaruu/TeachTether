@@ -4,6 +4,7 @@ namespace TeachTether.Application.Interfaces.Repositories
 {
     public interface IGuardianRepository : IRepository<Guardian>
     {
-        Task<IEnumerable<Guardian>> GetAllAsync(int schoolId);
+        Task<IEnumerable<Guardian>> GetBySchoolIdAsync(int schoolId);
+        Task<Guardian?> GetByUserIdAsync(string userId);
     }
 }

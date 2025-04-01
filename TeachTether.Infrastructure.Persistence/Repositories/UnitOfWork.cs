@@ -47,7 +47,5 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
         public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
 
         public void Dispose() => _context.Dispose();
-
-
     }
 }

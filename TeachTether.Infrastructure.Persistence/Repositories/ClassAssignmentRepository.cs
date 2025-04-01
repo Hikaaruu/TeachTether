@@ -1,4 +1,5 @@
-﻿using TeachTether.Application.Interfaces.Repositories;
+﻿using Microsoft.EntityFrameworkCore;
+using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 using TeachTether.Infrastructure.Persistence.Data;
 
@@ -6,16 +7,22 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
 {
     public class ClassAssignmentRepository : Repository<ClassAssignment>, IClassAssignmentRepository
     {
-        private readonly ApplicationDbContext _context;
+        public ClassAssignmentRepository(ApplicationDbContext context) : base(context) { }
 
-        public ClassAssignmentRepository(ApplicationDbContext context) : base(context)
+        public async Task<IEnumerable<ClassAssignment>> GetByClassGroupIdAsync(int classGroupId)
         {
-            _context = context;
+            return await _dbSet
+                .AsNoTracking()
+                .Where(ca => ca.ClassGroupId == classGroupId)
+                .ToListAsync();
         }
 
-        public async Task<IEnumerable<ClassAssignment>> GetAllAsync(int schoolId)
+        public async Task<IEnumerable<ClassAssignment>> GetByTeacherIdAsync(int teacherId)
         {
-            throw new NotImplementedException();
+            return await _dbSet
+                .AsNoTracking()
+                .Where(ca => ca.TeacherId == teacherId)
+                .ToListAsync();
         }
     }
 }

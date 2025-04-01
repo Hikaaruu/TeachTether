@@ -5,15 +5,16 @@ using TeachTether.Infrastructure.Persistence.Data;
 
 namespace TeachTether.Infrastructure.Persistence.Repositories
 {
-    public class SchoolOwnerRepository : Repository<SchoolOwner>, ISchoolOwnerRepository
+    public class SchoolRepository : Repository<School>, ISchoolRepository
     {
-        public SchoolOwnerRepository(ApplicationDbContext context) : base(context) { }
+        public SchoolRepository(ApplicationDbContext context) : base(context) { }
 
-        public async Task<SchoolOwner?> GetByUserIdAsync(string userId)
+        public async Task<IEnumerable<School>> GetBySchoolOwnerIdAsync(int schoolOwnerId)
         {
             return await _dbSet
                 .AsNoTracking()
-                .SingleOrDefaultAsync(so => so.UserId == userId);
+                .Where(s => s.SchoolOwnerId == schoolOwnerId)
+                .ToListAsync();
         }
     }
 }

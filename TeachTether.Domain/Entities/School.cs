@@ -4,6 +4,6 @@
     {
         public int Id { get; set; }
         public required string Name { get; set; } 
-        public int OwnerUserId { get; set; }
+        public int SchoolOwnerId { get; set; }
     }
 }

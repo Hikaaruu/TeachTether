@@ -16,7 +16,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Configurations
 
             builder.HasOne<SchoolOwner>()
                 .WithMany()
-                .HasForeignKey(s => s.OwnerUserId)
+                .HasForeignKey(s => s.SchoolOwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
