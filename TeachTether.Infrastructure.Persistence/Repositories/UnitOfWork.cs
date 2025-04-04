@@ -17,6 +17,16 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
         public ISchoolRepository Schools { get; }
         public IStudentRepository Students { get; }
         public ITeacherRepository Teachers { get; }
+        public IAnnouncementClassGroupRepository AnnouncementClassGroups { get; }
+        public IAnnouncementRepository Announcements { get; }
+        public IClassGroupSubjectRepository ClassGroupsSubjects { get; }
+        public IMessageAttachmentRepository MessageAttachments { get; }
+        public IMessageRepository Messages { get; }
+        public IMessageThreadRepository MessageThreads { get; }
+        public IStudentAttendanceRepository StudentAttendances { get; }
+        public IStudentBehaviorRepository StudentBehaviors { get; }
+        public IStudentGradeRepository StudentGrades { get; }
+        public ISubjectRepository Subjects { get; }
 
         public UnitOfWork(
             ApplicationDbContext context,
@@ -29,7 +39,17 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             ISchoolOwnerRepository schoolOwnerRepository,
             ISchoolRepository schoolRepository,
             IStudentRepository studentRepository,
-            ITeacherRepository teacherRepository)
+            ITeacherRepository teacherRepository,
+            IAnnouncementClassGroupRepository announcementClassGroupRepository,
+            IAnnouncementRepository announcementRepository,
+            IClassGroupSubjectRepository classGroupSubjectRepository,
+            IMessageAttachmentRepository messageAttachmentRepository,
+            IMessageRepository messageRepository,
+            IMessageThreadRepository messageThreadRepository,
+            IStudentAttendanceRepository studentAttendanceRepository,
+            IStudentBehaviorRepository studentBehaviorRepository,
+            IStudentGradeRepository studentGradeRepository,
+            ISubjectRepository subjectRepository)
         {
             _context = context;
             ClassAssignments = classAssignmentRepository;
@@ -42,6 +62,16 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             Schools = schoolRepository;
             Students = studentRepository;
             Teachers = teacherRepository;
+            AnnouncementClassGroups = announcementClassGroupRepository;
+            Announcements = announcementRepository;
+            ClassGroupsSubjects = classGroupSubjectRepository;
+            MessageAttachments = messageAttachmentRepository;
+            Messages = messageRepository;
+            MessageThreads = messageThreadRepository;
+            StudentAttendances = studentAttendanceRepository;
+            StudentGrades = studentGradeRepository;
+            Subjects = subjectRepository;
+            StudentBehaviors = studentBehaviorRepository;
         }
 
         public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();

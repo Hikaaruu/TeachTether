@@ -10,9 +10,10 @@ namespace TeachTether.Infrastructure.Persistence.Data.Configurations
         {
             builder.HasKey(ca => ca.Id);
 
-            builder.Property(ca => ca.Subject)
-                .IsRequired()
-                .HasMaxLength(100);
+            builder.HasOne<Subject>()
+                .WithMany()
+                .HasForeignKey(ca => ca.SubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne<ClassGroup>()
                 .WithMany()
@@ -23,6 +24,9 @@ namespace TeachTether.Infrastructure.Persistence.Data.Configurations
                 .WithMany()
                 .HasForeignKey(ca => ca.TeacherId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(ca => new { ca.ClassGroupId, ca.SubjectId, ca.TeacherId })
+                .IsUnique();
         }
     }
 }

@@ -71,16 +71,25 @@ namespace TeachTether.API
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
 
-            
+            builder.Services.AddScoped<IAnnouncementClassGroupRepository, AnnouncementClassGroupRepository>();
+            builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
             builder.Services.AddScoped<IClassAssignmentRepository, ClassAssignmentRepository>();
             builder.Services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
             builder.Services.AddScoped<IClassGroupStudentRepository, ClassGroupStudentRepository>();
+            builder.Services.AddScoped<IClassGroupSubjectRepository, ClassGroupSubjectRepository>();
             builder.Services.AddScoped<IGuardianRepository, GuardianRepository>();
             builder.Services.AddScoped<IGuardianStudentRepository, GuardianStudentRepository>();
+            builder.Services.AddScoped<IMessageAttachmentRepository, MessageAttachmentRepository>();
+            builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+            builder.Services.AddScoped<IMessageThreadRepository, MessageThreadRepository>();
             builder.Services.AddScoped<ISchoolAdminRepository, SchoolAdminRepository>();
             builder.Services.AddScoped<ISchoolOwnerRepository, SchoolOwnerRepository>();
             builder.Services.AddScoped<ISchoolRepository, SchoolRepository>();
+            builder.Services.AddScoped<IStudentAttendanceRepository, StudentAttendanceRepository>();
+            builder.Services.AddScoped<IStudentBehaviorRepository, StudentBehaviorRepository>();
+            builder.Services.AddScoped<IStudentGradeRepository, StudentGradeRepository>();
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+            builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
             builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
