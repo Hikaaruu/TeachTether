@@ -1,0 +1,17 @@
+﻿using FluentValidation;
+using TeachTether.Application.DTOs;
+
+namespace TeachTether.Application.Validators
+{
+    public class UpdateSchoolRequestValidator : AbstractValidator<UpdateSchoolRequest>
+    {
+        public UpdateSchoolRequestValidator()
+        {
+            RuleFor(x => x.Name)
+               .NotEmpty().WithMessage("School name is required.")
+               .MinimumLength(3).WithMessage("School name must be at least 3 characters long.")
+               .MaximumLength(180).WithMessage("School name cannot be longer than 180 characters.")
+               .Matches(@"^[a-zA-Z0-9\s\-_'&.,]+$").WithMessage("School name contains invalid characters.");
+        }
+    }
+}

@@ -12,6 +12,16 @@ using TeachTether.Infrastructure.Persistence.Repositories;
 using TeachTether.Application.Mapping;
 using TeachTether.Application.Settings;
 using TeachTether.Application.Services;
+using Microsoft.AspNetCore.Mvc;
+using TeachTether.API.Errors;
+using TeachTether.API.Middleware;
+using Microsoft.AspNetCore.Authorization;
+using TeachTether.Application.Authorization.Handlers;
+using TeachTether.Application.Authorization.Requirements;
+using TeachTether.Domain.Entities;
+using TeachTether.API.Authorization;
+using System.Diagnostics;
+using TeachTether.Application.Common.Exceptions;
 
 namespace TeachTether.API
 {
@@ -22,6 +32,14 @@ namespace TeachTether.API
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                    ValidationProblemDetailsFactory.Create(context.HttpContext, context.ModelState);
+            });
+
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend",
@@ -64,9 +82,18 @@ namespace TeachTether.API
                 };
             });
 
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("IsSchoolOwner", polBuilder =>
+                    polBuilder.Requirements.Add(new UserTypeRequirement(UserType.SchoolOwner)));
+            });
+
             builder.Services.AddFluentValidationAutoValidation()
                 .AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             builder.Services.AddAutoMapper(typeof(UserMappingProfile));
+
+            builder.Services.AddScoped<IAuthorizationHandler, UserTypeHandler>();
+            builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
 
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
@@ -95,8 +122,11 @@ namespace TeachTether.API
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<ISchoolService, SchoolService>();
 
             var app = builder.Build();
+
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
 
             app.UseCors("AllowFrontend");
 
@@ -108,9 +138,10 @@ namespace TeachTether.API
             }
 
             app.UseHttpsRedirection();
+            
 
+            app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
