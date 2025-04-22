@@ -3,6 +3,7 @@ using TeachTether.Application.Common.Exceptions;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
+using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Services
 {
@@ -19,7 +20,13 @@ namespace TeachTether.Application.Services
 
         public async Task<SchoolResponse> CreateAsync(CreateSchoolRequest request, int schoolOwnerId)
         {
-            throw new NotImplementedException();
+            var school = _mapper.Map<School>(request);
+            school.SchoolOwnerId = schoolOwnerId;
+
+            await _unitOfWork.Schools.AddAsync(school);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<SchoolResponse>(school);
         }
 
         public async Task DeleteAsync(int id)
@@ -27,9 +34,10 @@ namespace TeachTether.Application.Services
             throw new NotImplementedException();
         }
 
-        public async Task<List<SchoolResponse>> GetAllAsync()
+        public async Task<IEnumerable<SchoolResponse>> GetAllByOwnerAsync(int schoolOwnerId)
         {
-            throw new NotImplementedException();
+            var schools = await _unitOfWork.Schools.GetBySchoolOwnerIdAsync(schoolOwnerId);
+            return _mapper.Map<IEnumerable<SchoolResponse>>(schools);
         }
 
         public async Task<SchoolResponse> GetByIdAsync(int id)
@@ -41,7 +49,12 @@ namespace TeachTether.Application.Services
 
         public async Task UpdateAsync(int id, UpdateSchoolRequest request)
         {
-            throw new NotImplementedException();
+            var school = await _unitOfWork.Schools.GetByIdAsync(id)
+                     ?? throw new NotFoundException("School not found");
+
+            school.Name = request.Name;
+            _unitOfWork.Schools.Update(school);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

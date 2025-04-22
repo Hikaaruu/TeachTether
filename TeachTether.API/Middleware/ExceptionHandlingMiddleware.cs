@@ -27,44 +27,29 @@ namespace TeachTether.API.Middleware
 
                 context.Response.ContentType = "application/json";
 
-                var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-                var error = new ApiErrorResponse
-                {
-                    TraceId = traceId,
-                    Instance = context.Request.Path,
-                    Detail = ex.Message
-                };
+                int statusCode;
 
                 switch (ex)
                 {
                     case NotFoundException:
-                        context.Response.StatusCode = StatusCodes.Status404NotFound;
-                        error.Status = 404;
-                        error.Title = "Resource Not Found";
-                        error.Type = "https://httpstatuses.com/404";
+                        statusCode = StatusCodes.Status404NotFound;
                         break;
 
                     case ForbiddenException:
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                        error.Status = 403;
-                        error.Title = "Forbidden";
-                        error.Type = "https://httpstatuses.com/403";
+                        statusCode = StatusCodes.Status403Forbidden;
                         break;
 
                     case UnauthorizedAccessException:
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                        error.Status = 401;
-                        error.Title = "Unauthorized";
-                        error.Type = "https://httpstatuses.com/401";
+                        statusCode = StatusCodes.Status401Unauthorized;
                         break;
 
                     default:
-                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                        error.Status = 500;
-                        error.Title = "Internal Server Error";
-                        error.Type = "https://httpstatuses.com/500";
+                        statusCode = StatusCodes.Status500InternalServerError;
                         break;
                 }
+
+                context.Response.StatusCode = statusCode;
+                var error = ApiErrorResponseFactory.FromContext(context, statusCode);
 
                 await context.Response.WriteAsJsonAsync(error);
             }

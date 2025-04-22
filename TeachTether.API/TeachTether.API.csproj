@@ -19,6 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TeachTether.Application\TeachTether.Application.csproj" />
+    <ProjectReference Include="..\TeachTether.Domain\TeachTether.Domain.csproj" />
     <ProjectReference Include="..\TeachTether.Infrastructure.Persistence\TeachTether.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 

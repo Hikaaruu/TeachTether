@@ -14,6 +14,11 @@ namespace TeachTether.Infrastructure.Persistence.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(255);
 
+            builder.HasOne<School>()
+                .WithMany()
+                .HasForeignKey(s => s.SchoolId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasIndex(s => s.Name)
                 .IsUnique();
         }

@@ -12,16 +12,12 @@ using TeachTether.Infrastructure.Persistence.Repositories;
 using TeachTether.Application.Mapping;
 using TeachTether.Application.Settings;
 using TeachTether.Application.Services;
-using Microsoft.AspNetCore.Mvc;
 using TeachTether.API.Errors;
 using TeachTether.API.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using TeachTether.Application.Authorization.Handlers;
-using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Domain.Entities;
-using TeachTether.API.Authorization;
-using System.Diagnostics;
-using TeachTether.Application.Common.Exceptions;
+using System.Security.Claims;
 
 namespace TeachTether.API
 {
@@ -33,12 +29,8 @@ namespace TeachTether.API
 
             // Add services to the container.
 
-            builder.Services.Configure<ApiBehaviorOptions>(options =>
-            {
-                options.InvalidModelStateResponseFactory = context =>
-                    ValidationProblemDetailsFactory.Create(context.HttpContext, context.ModelState);
-            });
-
+            builder.Services.AddFluentValidationAutoValidation()
+                .AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
             builder.Services.AddCors(options =>
             {
@@ -82,19 +74,14 @@ namespace TeachTether.API
                 };
             });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("IsSchoolOwner", polBuilder =>
-                    polBuilder.Requirements.Add(new UserTypeRequirement(UserType.SchoolOwner)));
-            });
+            builder.Services.AddAuthorizationBuilder()
+                .AddPolicy("RequireSchoolOwner", polBuilder => 
+                    polBuilder.RequireClaim(ClaimTypes.Role,UserType.SchoolOwner.ToString()));
 
-            builder.Services.AddFluentValidationAutoValidation()
-                .AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             builder.Services.AddAutoMapper(typeof(UserMappingProfile));
 
-            builder.Services.AddScoped<IAuthorizationHandler, UserTypeHandler>();
-            builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
-
+            builder.Services.AddScoped<IAuthorizationHandler, CanManageSchoolHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewSchoolHandler>();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
 
@@ -128,6 +115,16 @@ namespace TeachTether.API
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+            app.UseStatusCodePages(async context =>
+            {
+                var response = context.HttpContext.Response;
+                var error = ApiErrorResponseFactory.FromContext(context.HttpContext, response.StatusCode);
+                response.ContentType = "application/json";
+                await response.WriteAsJsonAsync(error);
+
+            });
+
+
             app.UseCors("AllowFrontend");
 
             // Configure the HTTP request pipeline.
@@ -138,7 +135,7 @@ namespace TeachTether.API
             }
 
             app.UseHttpsRedirection();
-            
+
 
             app.UseAuthentication();
             app.UseAuthorization();

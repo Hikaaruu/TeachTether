@@ -15,5 +15,13 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .SingleOrDefaultAsync(s => s.Name == name);
         }
+
+        public async Task<IEnumerable<Subject>> GetBySchoolIdAsync(int schoolId)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Where(s => s.SchoolId == schoolId)
+                .ToListAsync();
+        }
     }
 }
