@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
-using TeachTether.Domain.Entities;
 
 namespace TeachTether.API.Controllers
 {
@@ -45,6 +44,50 @@ namespace TeachTether.API.Controllers
                 return NotFound();
 
             return Ok(schoolAdmin);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<CreatedSchoolAdminResponse>> Create(int schoolId, [FromBody] CreateSchoolAdminRequest request)
+        {
+            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+            if (!authResult.Succeeded)
+                return Forbid();
+
+            var createdSchoolAdmin = _schoolAdminService.CreateAsync(request, schoolId);
+            return CreatedAtAction(nameof(Get), new { id = createdSchoolAdmin.Id }, createdSchoolAdmin);
+
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int schoolId, int id, UpdateSchoolAdminRequest request)
+        {
+            var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+            if (!authResult.Succeeded)
+                return Forbid();
+
+            if (schoolAdmin.SchoolId != schoolId)
+                return NotFound();
+
+            await _schoolAdminService.UpdateAsync(id, request);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int schoolId, int id)
+        {
+            var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+            if (!authResult.Succeeded)
+                return Forbid();
+
+            if (schoolAdmin.SchoolId != schoolId)
+                return NotFound();
+
+            await _schoolAdminService.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

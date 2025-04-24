@@ -11,6 +11,5 @@ namespace TeachTether.Application.DTOs
         public string? MiddleName { get; set; }
         public Sex Sex { get; set; }
         public int SchoolId { get; set; }
-        public DateOnly DateOfBirth { get; set; }
     }
 }

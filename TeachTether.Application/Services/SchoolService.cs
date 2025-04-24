@@ -42,7 +42,7 @@ namespace TeachTether.Application.Services
 
         public async Task<SchoolResponse> GetByIdAsync(int id)
         {
-            var school = await _unitOfWork.Schools.GetByIdAsync(id) 
+            var school = await _unitOfWork.Schools.GetByIdAsync(id)
                 ?? throw new NotFoundException("School not found");
             return _mapper.Map<SchoolResponse>(school);
         }
@@ -52,7 +52,7 @@ namespace TeachTether.Application.Services
             var school = await _unitOfWork.Schools.GetByIdAsync(id)
                      ?? throw new NotFoundException("School not found");
 
-            school.Name = request.Name;
+            _mapper.Map(request, school);
             _unitOfWork.Schools.Update(school);
             await _unitOfWork.SaveChangesAsync();
         }

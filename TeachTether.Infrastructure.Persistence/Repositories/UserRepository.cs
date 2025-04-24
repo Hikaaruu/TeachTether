@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using TeachTether.Application.Common;
+using TeachTether.Application.Common.Models;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 using TeachTether.Infrastructure.Persistence.Data;
@@ -10,10 +12,12 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IMapper _mapper;
 
-        public UserRepository(UserManager<ApplicationUser> userManager)
+        public UserRepository(UserManager<ApplicationUser> userManager, IMapper mapper)
         {
             _userManager = userManager;
+            _mapper = mapper;
         }
 
         public async Task<OperationResult> CreateAsync(User user, string password)
@@ -30,6 +34,21 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             return OperationResult.Failure(identityResult.Errors.Select(e => e.Description));
         }
 
+        public async Task<OperationResult> UpdateAsync(string userId, UpdateUserDto updateUserDto)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is null)
+                return OperationResult.Failure(["User not found"]);
+
+            _mapper.Map(updateUserDto, user);
+
+            var identityResult = await _userManager.UpdateAsync(user);
+
+            return identityResult.Succeeded
+                ? OperationResult.Success()
+                : OperationResult.Failure(identityResult.Errors.Select(e => e.Description));
+        }
+
         public async Task<User?> FindByUserNameAsync(string userName)
         {
             var appUser = await _userManager.FindByNameAsync(userName);
@@ -39,6 +58,7 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
         public async Task<bool> CheckPasswordAsync(string userId, string password)
         {
             var appUser = await _userManager.FindByIdAsync(userId);
+
             if (appUser is null)
                 return false;
 
@@ -48,8 +68,10 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
         public async Task<IEnumerable<Claim>> GetClaimsAsync(string userId)
         {
             var appUser = await _userManager.FindByIdAsync(userId);
+
             if (appUser is null)
                 return Enumerable.Empty<Claim>();
+
             return await _userManager.GetClaimsAsync(appUser);
         }
 
@@ -83,5 +105,6 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             };
         }
 
+        
     }
 }

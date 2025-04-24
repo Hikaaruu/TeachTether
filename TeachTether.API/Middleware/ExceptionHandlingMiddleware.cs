@@ -49,7 +49,7 @@ namespace TeachTether.API.Middleware
                 }
 
                 context.Response.StatusCode = statusCode;
-                var error = ApiErrorResponseFactory.FromContext(context, statusCode);
+                var error = ApiErrorResponseFactory.FromContext(context, statusCode,detail:ex.Message);
 
                 await context.Response.WriteAsJsonAsync(error);
             }
