@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using TeachTether.Application.Common.Exceptions;
-using TeachTether.Application.Common.Interfaces;
+using TeachTether.Application.Common.Models;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
@@ -12,17 +12,13 @@ namespace TeachTether.Application.Services
     {
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IUserRepository _userRepository;
-        private readonly ICredentialsGenerator _credentialsGenerator;
-        private readonly IUserCreationService _userCreationService;
+        private readonly IUserService _userService;
 
-        public SchoolAdminService(IMapper mapper, IUnitOfWork unitOfWork, IUserRepository userRepository, ICredentialsGenerator credentialsGenerator, IUserCreationService userCreationService)
+        public SchoolAdminService(IMapper mapper, IUnitOfWork unitOfWork, IUserService userService)
         {
             _mapper = mapper;
             _unitOfWork = unitOfWork;
-            _userRepository = userRepository;
-            _credentialsGenerator = credentialsGenerator;
-            _userCreationService = userCreationService;
+            _userService = userService;
         }
 
         public async Task<IEnumerable<SchoolAdminResponse>> GetAllBySchoolAsync(int schoolId)
@@ -36,13 +32,19 @@ namespace TeachTether.Application.Services
             var schoolAdmin = await _unitOfWork.SchoolAdmins.GetByIdAsync(id)
                 ?? throw new NotFoundException("School admin not found");
 
-            return _mapper.Map<SchoolAdminResponse>(schoolAdmin);
+            var user = _userService.GetByIdAsync(schoolAdmin.UserId);
+
+            return new SchoolAdminResponse()
+            {
+                User = _mapper.Map<UserDto>(user),
+                Id = schoolAdmin.Id,
+                SchoolId = schoolAdmin.Id
+            };
         }
 
         public async Task<CreatedSchoolAdminResponse> CreateAsync(CreateSchoolAdminRequest request, int schoolId)
         {
-            (var user, var password) = await _userCreationService
-                .CreateAsync(request.User,UserType.SchoolAdmin);
+            (var user, var password) = await _userService.CreateAsync(request.User, UserType.SchoolAdmin);
 
             var schoolAdmin = new SchoolAdmin
             {
@@ -53,22 +55,23 @@ namespace TeachTether.Application.Services
             await _unitOfWork.SchoolAdmins.AddAsync(schoolAdmin);
             await _unitOfWork.SaveChangesAsync();
 
-            var response = _mapper.Map<CreatedSchoolAdminResponse>(user);
-            response.Password = password;
-            response.SchoolId = schoolId;
 
-            return response;
+            return new CreatedSchoolAdminResponse
+            {
+                User = _mapper.Map<UserDto>(user),
+                Username = user.UserName,
+                Password = password,
+                SchoolId = schoolAdmin.SchoolId,
+                Id = schoolAdmin.Id
+            };
         }
 
-        public  async Task UpdateAsync(int id, UpdateSchoolAdminRequest request)
+        public async Task UpdateAsync(int id, UpdateSchoolAdminRequest request)
         {
             var schoolAdmin = await _unitOfWork.SchoolAdmins.GetByIdAsync(id)
                 ?? throw new NotFoundException("School admin not found");
 
-            var result = await _userRepository.UpdateAsync(schoolAdmin.UserId,request.User);
-
-            if (!result.Succeeded)
-                throw new Exception("Failed to update user");
+            await _userService.UpdateAsync(schoolAdmin.UserId, request.User);
         }
 
         public Task DeleteAsync(int id)

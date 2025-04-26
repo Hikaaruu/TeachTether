@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using TeachTether.Application.Common;
-using TeachTether.Application.Common.Models;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 using TeachTether.Infrastructure.Persistence.Data;
@@ -20,6 +20,16 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             _mapper = mapper;
         }
 
+        public async Task<User?> GetByIdAsync(string userId)
+        {
+            var appUser = await _userManager.FindByIdAsync(userId);
+
+            if (appUser is null)
+                return null;
+
+            return MapToDomainUser(appUser);
+        }
+
         public async Task<OperationResult> CreateAsync(User user, string password)
         {
             var appUser = MapToApplicationUser(user);
@@ -34,15 +44,11 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             return OperationResult.Failure(identityResult.Errors.Select(e => e.Description));
         }
 
-        public async Task<OperationResult> UpdateAsync(string userId, UpdateUserDto updateUserDto)
+        public async Task<OperationResult> UpdateAsync(User user)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user is null)
-                return OperationResult.Failure(["User not found"]);
+            var appUser = MapToApplicationUser(user);
 
-            _mapper.Map(updateUserDto, user);
-
-            var identityResult = await _userManager.UpdateAsync(user);
+            var identityResult = await _userManager.UpdateAsync(appUser);
 
             return identityResult.Succeeded
                 ? OperationResult.Success()
@@ -105,6 +111,5 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             };
         }
 
-        
     }
 }
