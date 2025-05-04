@@ -6,6 +6,6 @@
         public required string FirstName { get; set; }
         public string? MiddleName { get; set; }
         public required string LastName { get; set; }
-        public char Sex { get; set; }
+        public required char Sex { get; set; }
     }
 }

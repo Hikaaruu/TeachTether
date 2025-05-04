@@ -26,8 +26,8 @@ namespace TeachTether.Application.Authorization.Handlers
             var role = Enum.Parse<UserType>(userType);
             var school = await _unitOfWork.Schools.GetByIdAsync(schoolId);
 
-            if (school == null) 
-                return; 
+            if (school == null)
+                return;
 
             var canView = role switch
             {

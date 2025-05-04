@@ -66,7 +66,7 @@ namespace TeachTether.Application.Services
             var student = await _unitOfWork.Students.GetByIdAsync(id)
                 ?? throw new NotFoundException("Student not found");
 
-            var user = _userService.GetByIdAsync(student.UserId);
+            var user = await _userService.GetByIdAsync(student.UserId);
 
             return new StudentResponse()
             {

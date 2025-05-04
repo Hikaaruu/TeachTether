@@ -33,6 +33,9 @@ namespace TeachTether.Application.Validators
             RuleFor(x => x.LastName)
                 .NotEmpty().MaximumLength(50).Matches("^[A-Za-z' -]+$");
 
+            RuleFor(x => x.MiddleName)
+                .NotEmpty().MaximumLength(50).Matches("^[A-Za-z' -]+$");
+
             RuleFor(x => x.Sex)
                 .Must(s => s == 'M' || s == 'F').WithMessage("Sex must be 'M' or 'F'");
         }

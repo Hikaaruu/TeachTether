@@ -18,6 +18,9 @@ using Microsoft.AspNetCore.Authorization;
 using TeachTether.Application.Authorization.Handlers;
 using TeachTether.Domain.Entities;
 using System.Security.Claims;
+using AutoMapper;
+using TeachTether.Application.Common.Interfaces;
+using TeachTether.Application.Common.Services;
 
 namespace TeachTether.API
 {
@@ -75,8 +78,17 @@ namespace TeachTether.API
             });
 
             builder.Services.AddAuthorizationBuilder()
-                .AddPolicy("RequireSchoolOwner", polBuilder => 
-                    polBuilder.RequireClaim(ClaimTypes.Role,UserType.SchoolOwner.ToString()));
+                .AddPolicy("RequireSchoolOwner", polBuilder =>
+                    polBuilder.RequireClaim(ClaimTypes.Role, UserType.SchoolOwner.ToString())
+                )
+                .AddPolicy("RequireSchoolOwnerOrAdmin", policyBuilder =>
+                    policyBuilder.RequireAssertion(context =>
+                        context.User.HasClaim(c =>
+                            c.Type == ClaimTypes.Role &&
+                            (c.Value == UserType.SchoolOwner.ToString() || c.Value == UserType.SchoolAdmin.ToString())
+                        )
+                    )
+                );
 
             builder.Services.AddAutoMapper(typeof(UserMappingProfile));
 
@@ -110,6 +122,13 @@ namespace TeachTether.API
 
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ISchoolService, SchoolService>();
+            builder.Services.AddScoped<IStudentService, StudentService>();
+            builder.Services.AddScoped<ISchoolAdminService, SchoolAdminService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+
+            builder.Services.AddScoped<ICredentialsGenerator, CredentialsGenerator>();
+            builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+            
 
             var app = builder.Build();
 

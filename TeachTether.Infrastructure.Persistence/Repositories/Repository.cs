@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Infrastructure.Persistence.Data;
 
@@ -24,6 +25,12 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
         public void Update(T entity) => _dbSet.Update(entity);
 
         public void Delete(T entity) => _dbSet.Remove(entity);
+
+        public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.AsNoTracking().AnyAsync(predicate);
+        }
+
 
     }
 }
