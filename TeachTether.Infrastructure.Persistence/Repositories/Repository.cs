@@ -31,6 +31,14 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             return await _dbSet.AsNoTracking().AnyAsync(predicate);
         }
 
+        public async Task<IEnumerable<T>> WhereAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
+        }
 
+        public async Task<IEnumerable<T>> GetByIdsAsync(IEnumerable<int> ids)
+        {
+            return await _dbSet.AsNoTracking().Where(e => ids.Contains(EF.Property<int>(e, "Id"))).ToListAsync();
+        }
     }
 }

@@ -12,6 +12,6 @@ namespace TeachTether.Application.Interfaces.Repositories
         Task<User?> GetByIdAsync(string userId);
         Task<bool> CheckPasswordAsync(string userId, string password);
         Task<IEnumerable<Claim>> GetClaimsAsync(string userId);
-
+        Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<string> ids);
     }
 }

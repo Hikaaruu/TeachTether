@@ -10,5 +10,7 @@ namespace TeachTether.Application.Interfaces.Repositories
         void Update(T entity);
         void Delete(T entity);
         Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate);
+        Task<IEnumerable<T>> WhereAsync(Expression<Func<T, bool>> predicate);
+        Task<IEnumerable<T>> GetByIdsAsync(IEnumerable<int> ids);
     }
 }

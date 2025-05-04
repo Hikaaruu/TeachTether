@@ -51,14 +51,70 @@ namespace TeachTether.Application.Services
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<StudentResponse>> GetAllByClassGroupAsync(int classGroupId)
+        public async Task<IEnumerable<StudentResponse>> GetAllByClassGroupAsync(int classGroupId)
         {
-            throw new NotImplementedException();
+            var classGroupStudents = await _unitOfWork.ClassGroupStudents.GetByClassGroupIdAsync(classGroupId);
+
+            var studentIds = classGroupStudents.Select(cgs => cgs.StudentId);
+            var students = await _unitOfWork.Students.GetByIdsAsync(studentIds);
+
+            var userIds = students.Select(s => s.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var result = new List<StudentResponse>();
+
+            foreach (var student in students.Where(s => s != null))
+            {
+                if (!userMap.TryGetValue(student.UserId, out var user))
+                    throw new Exception($"User data can not be found for student with id = {student.Id}");
+
+                var response = new StudentResponse
+                {
+                    User = _mapper.Map<UserDto>(user),
+                    Id = student.Id,
+                    SchoolId = student.SchoolId,
+                    DateOfBirth = student.DateOfBirth
+                };
+
+                result.Add(response);
+            }
+
+            return result;
         }
 
-        public Task<IEnumerable<StudentResponse>> GetAllBySchoolAsync(int schoolId)
+        public async Task<IEnumerable<StudentResponse>> GetAllBySchoolAsync(int schoolId)
         {
-            throw new NotImplementedException();
+            var students = await _unitOfWork.Students.GetBySchoolIdAsync(schoolId);
+
+            var userIds = students.Select(s => s.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var result = new List<StudentResponse>();
+
+            foreach (var student in students.Where(s => s != null))
+            {
+                if (!userMap.TryGetValue(student.UserId, out var user))
+                    throw new Exception($"User data can not be found for student with id = {student.Id}");
+
+                var response = new StudentResponse
+                {
+                    User = _mapper.Map<UserDto>(user),
+                    Id = student.Id,
+                    SchoolId = student.SchoolId,
+                    DateOfBirth = student.DateOfBirth
+                };
+
+                result.Add(response);
+            }
+
+            return result;
+
         }
 
         public async Task<StudentResponse> GetByIdAsync(int id)
@@ -72,7 +128,7 @@ namespace TeachTether.Application.Services
             {
                 User = _mapper.Map<UserDto>(user),
                 Id = student.Id,
-                SchoolId=student.SchoolId,
+                SchoolId = student.SchoolId,
                 DateOfBirth = student.DateOfBirth
             };
         }

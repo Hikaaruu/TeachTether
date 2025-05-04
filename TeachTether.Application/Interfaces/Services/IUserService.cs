@@ -12,5 +12,6 @@ namespace TeachTether.Application.Interfaces.Services
         Task UpdateAsync(string userId, UpdateUserDto updateUserDto);
         Task<string?> TryLoginAsync(LoginRequest request);
         Task<User> GetByIdAsync(string id);
+        Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<string> ids);
     }
 }

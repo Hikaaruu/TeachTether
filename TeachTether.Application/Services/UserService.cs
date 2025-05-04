@@ -87,5 +87,10 @@ namespace TeachTether.Application.Services
 
             return user;
         }
+
+        public async Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<string> ids)
+        {
+            return await _userRepository.GetByIdsAsync(ids.Distinct());
+        }
     }
 }

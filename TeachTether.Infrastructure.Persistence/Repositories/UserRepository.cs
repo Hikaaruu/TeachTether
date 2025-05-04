@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
-using System.Reflection.Metadata.Ecma335;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using TeachTether.Application.Common;
 using TeachTether.Application.Interfaces.Repositories;
@@ -80,6 +80,16 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
 
             return await _userManager.GetClaimsAsync(appUser);
         }
+
+        public async Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<string> ids)
+        {
+            var appUsers = await _userManager.Users
+                .Where(u => ids.Contains(u.Id))
+                .ToListAsync();
+
+            return appUsers.Select(MapToDomainUser);
+        }
+
 
 
         private static ApplicationUser MapToApplicationUser(User user)

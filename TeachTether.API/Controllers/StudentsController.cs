@@ -42,6 +42,7 @@ namespace TeachTether.API.Controllers
         public async Task<ActionResult<IEnumerable<StudentResponse>>> GetAllByClassGroup(int schoolId, int classGroupId)
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
+            //var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
 
             var authResult = await _authorizationService.AuthorizeAsync(User, classGroupId, new CanViewClassGroupStudentsRequirement());
             if (!authResult.Succeeded)

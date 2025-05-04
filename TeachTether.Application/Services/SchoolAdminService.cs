@@ -24,7 +24,31 @@ namespace TeachTether.Application.Services
         public async Task<IEnumerable<SchoolAdminResponse>> GetAllBySchoolAsync(int schoolId)
         {
             var schoolAdmins = await _unitOfWork.SchoolAdmins.GetBySchoolIdAsync(schoolId);
-            return _mapper.Map<IEnumerable<SchoolAdminResponse>>(schoolAdmins);
+
+            var userIds = schoolAdmins.Select(sa => sa.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var responses = new List<SchoolAdminResponse>();
+
+            foreach (var admin in schoolAdmins)
+            {
+                if (!userMap.TryGetValue(admin.UserId, out var user))
+                    throw new Exception($"User data can not be found for school admin with id = {admin.Id}");
+
+                var response = new SchoolAdminResponse
+                {
+                    Id = admin.Id,
+                    SchoolId = admin.SchoolId,
+                    User = _mapper.Map<UserDto>(user)
+                };
+
+                responses.Add(response);
+            }
+
+            return responses;
         }
 
         public async Task<SchoolAdminResponse> GetByIdAsync(int id)
