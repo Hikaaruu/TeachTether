@@ -54,9 +54,12 @@ namespace TeachTether.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<StudentResponse>> Get(int id)
+        public async Task<ActionResult<StudentResponse>> Get(int id, int schoolId)
         {
             var student = await _studentService.GetByIdAsync(id);
+            if (student.SchoolId != schoolId)
+                return NotFound();
+
             var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewStudentRequirement());
 
             if (!authResult.Succeeded)
@@ -74,7 +77,7 @@ namespace TeachTether.API.Controllers
                 return Forbid();
 
             var createdStudent = await _studentService.CreateAsync(request, schoolId);
-            return CreatedAtAction(nameof(Get), new { id = createdStudent.Id }, createdStudent);
+            return CreatedAtAction(nameof(Get), new { id = createdStudent.Id, schoolId }, createdStudent);
         }
 
         [HttpPut("{id}")]

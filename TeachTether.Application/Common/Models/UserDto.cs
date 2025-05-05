@@ -1,6 +1,4 @@
-﻿using TeachTether.Domain.Entities;
-
-namespace TeachTether.Application.Common.Models
+﻿namespace TeachTether.Application.Common.Models
 {
     public class UserDto
     {
@@ -8,6 +6,6 @@ namespace TeachTether.Application.Common.Models
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public string? MiddleName { get; set; }
-        public Sex Sex { get; set; }
+        public char Sex { get; set; }
     }
 }

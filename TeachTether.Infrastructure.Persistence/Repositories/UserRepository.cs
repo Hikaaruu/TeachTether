@@ -46,7 +46,15 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
 
         public async Task<OperationResult> UpdateAsync(User user)
         {
-            var appUser = MapToApplicationUser(user);
+            var appUser = await _userManager.FindByIdAsync(user.Id!);
+
+            if (appUser is null)
+                return OperationResult.Failure(["User not found."]);
+
+            appUser.FirstName = user.FirstName;
+            appUser.LastName = user.LastName;
+            appUser.MiddleName = user.MiddleName;
+            appUser.Sex = user.Sex;
 
             var identityResult = await _userManager.UpdateAsync(appUser);
 

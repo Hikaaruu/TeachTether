@@ -56,13 +56,13 @@ namespace TeachTether.Application.Services
             var schoolAdmin = await _unitOfWork.SchoolAdmins.GetByIdAsync(id)
                 ?? throw new NotFoundException("School admin not found");
 
-            var user = _userService.GetByIdAsync(schoolAdmin.UserId);
+            var user = await _userService.GetByIdAsync(schoolAdmin.UserId);
 
             return new SchoolAdminResponse()
             {
                 User = _mapper.Map<UserDto>(user),
                 Id = schoolAdmin.Id,
-                SchoolId = schoolAdmin.Id
+                SchoolId = schoolAdmin.SchoolId
             };
         }
 

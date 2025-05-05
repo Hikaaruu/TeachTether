@@ -94,6 +94,9 @@ namespace TeachTether.API
 
             builder.Services.AddScoped<IAuthorizationHandler, CanManageSchoolHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewSchoolHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanManageSchoolEntitiesHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupStudentsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentHandler>();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
 

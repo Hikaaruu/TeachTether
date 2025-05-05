@@ -2,7 +2,7 @@
 {
     public class CreatedSchoolAdminResponse: SchoolAdminResponse
     {
-        public required string Username;
-        public required string Password;
+        public required string Username { get; set; }
+        public required string Password { get; set; }
     }
 }

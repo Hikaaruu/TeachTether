@@ -14,11 +14,14 @@ namespace TeachTether.Application.Common.Services
 
         public string GenerateUsername(string firstName, string? middleName, string lastName)
         {
-            var baseUsername = $"{firstName[..20]}.{(string.IsNullOrWhiteSpace(middleName) ? "" : middleName[0] + ".")}{lastName[..20]}";
-            baseUsername = Regex.Replace(baseUsername, @"[^a-z.]", "");
+            var baseUsername = $"{SafeSlice(firstName, 20)}.{(string.IsNullOrWhiteSpace(middleName) ? "" : middleName[0] + ".")}{SafeSlice(lastName, 20)}";
+            baseUsername = Regex.Replace(baseUsername.ToLowerInvariant(), @"[^a-z.]", "");
 
             var uniqueSuffix = Guid.NewGuid().ToString("N")[..6];
             return $"{baseUsername}_{uniqueSuffix}";
+
         }
+
+        private static string SafeSlice(string input, int length) => input.Length > length ? input[..length] : input;
     }
 }

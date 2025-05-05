@@ -27,7 +27,7 @@ namespace TeachTether.API.Controllers
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var schoolAdmins = _schoolAdminService.GetAllBySchoolAsync(schoolId);
+            var schoolAdmins = await _schoolAdminService.GetAllBySchoolAsync(schoolId);
             return Ok(schoolAdmins);
         }
 
@@ -53,8 +53,8 @@ namespace TeachTether.API.Controllers
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var createdSchoolAdmin = _schoolAdminService.CreateAsync(request, schoolId);
-            return CreatedAtAction(nameof(Get), new { id = createdSchoolAdmin.Id }, createdSchoolAdmin);
+            var createdSchoolAdmin = await _schoolAdminService.CreateAsync(request, schoolId);
+            return CreatedAtAction(nameof(Get), new { id = createdSchoolAdmin.Id, schoolId }, createdSchoolAdmin);
 
         }
 
