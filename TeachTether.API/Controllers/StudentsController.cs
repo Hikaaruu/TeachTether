@@ -38,6 +38,7 @@ namespace TeachTether.API.Controllers
 
         }
 
+        //need to check for class group existence (classgroup service needed), now returns incorrect forbidden responses
         [HttpGet("/api/schools/{schoolId}/classgroups/{classGroupId}/students")]
         public async Task<ActionResult<IEnumerable<StudentResponse>>> GetAllByClassGroup(int schoolId, int classGroupId)
         {
@@ -72,6 +73,8 @@ namespace TeachTether.API.Controllers
         [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
         public async Task<ActionResult<CreatedStudentResponse>> Create(int schoolId, [FromBody] CreateStudentRequest request)
         {
+            var _ = await _schoolService.GetByIdAsync(schoolId);
+
             var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
@@ -98,7 +101,6 @@ namespace TeachTether.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-
         public async Task<IActionResult> Delete(int schoolId, int id)
         {
             var student = await _studentService.GetByIdAsync(id);

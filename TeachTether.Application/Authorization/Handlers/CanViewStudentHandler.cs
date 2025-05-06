@@ -65,7 +65,7 @@ namespace TeachTether.Application.Authorization.Handlers
                             return;
 
                         var isAssignedToClassGroup = await _unitOfWork.ClassAssignments
-                            .ExistsAsync(ca => ca.TeacherId == teacher.Id && ca.ClassGroupId == classGroup.Id);
+                            .AnyAsync(ca => ca.TeacherId == teacher.Id && ca.ClassGroupId == classGroup.Id);
 
                         var isHomeTeacher = classGroup.HomeroomTeacherId == teacher.Id;
 
@@ -81,7 +81,7 @@ namespace TeachTether.Application.Authorization.Handlers
                             return;
 
                         canView = await _unitOfWork.GuardianStudents
-                            .ExistsAsync(ga => ga.GuardianId == guardian.Id && ga.StudentId == student.Id);
+                            .AnyAsync(ga => ga.GuardianId == guardian.Id && ga.StudentId == student.Id);
                         break;
                     }
 

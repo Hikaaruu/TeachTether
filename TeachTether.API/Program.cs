@@ -18,7 +18,6 @@ using Microsoft.AspNetCore.Authorization;
 using TeachTether.Application.Authorization.Handlers;
 using TeachTether.Domain.Entities;
 using System.Security.Claims;
-using AutoMapper;
 using TeachTether.Application.Common.Interfaces;
 using TeachTether.Application.Common.Services;
 
@@ -97,6 +96,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<IAuthorizationHandler, CanManageSchoolEntitiesHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupStudentsHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewTeacherHandler>();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
 
@@ -128,6 +128,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<IStudentService, StudentService>();
             builder.Services.AddScoped<ISchoolAdminService, SchoolAdminService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<ITeacherService, TeacherService>();
 
             builder.Services.AddScoped<ICredentialsGenerator, CredentialsGenerator>();
             builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

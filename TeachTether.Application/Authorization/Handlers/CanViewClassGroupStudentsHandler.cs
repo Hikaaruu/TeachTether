@@ -52,7 +52,7 @@ namespace TeachTether.Application.Authorization.Handlers
                         }
 
                         var isAssignedToClassGroup = await _unitOfWork.ClassAssignments
-                            .ExistsAsync(ca => ca.TeacherId == teacher.Id && ca.ClassGroupId == classGroup.Id);
+                            .AnyAsync(ca => ca.TeacherId == teacher.Id && ca.ClassGroupId == classGroup.Id);
 
                         var isHomeTeacher = classGroup.HomeroomTeacherId == teacher.Id;
 

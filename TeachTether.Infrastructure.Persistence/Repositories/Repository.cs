@@ -26,12 +26,12 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
 
         public void Delete(T entity) => _dbSet.Remove(entity);
 
-        public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)
+        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.AsNoTracking().AnyAsync(predicate);
         }
 
-        public async Task<IEnumerable<T>> WhereAsync(Expression<Func<T, bool>> predicate)
+        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
         }

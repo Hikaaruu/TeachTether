@@ -97,7 +97,7 @@ namespace TeachTether.Application.Services
 
             var result = new List<StudentResponse>();
 
-            foreach (var student in students.Where(s => s != null))
+            foreach (var student in students)
             {
                 if (!userMap.TryGetValue(student.UserId, out var user))
                     throw new Exception($"User data can not be found for student with id = {student.Id}");
