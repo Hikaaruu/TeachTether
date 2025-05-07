@@ -97,6 +97,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupStudentsHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewTeacherHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewGuardianHandler>();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
 
@@ -129,6 +130,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<ISchoolAdminService, SchoolAdminService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
+            builder.Services.AddScoped<IGuardianService, GuardianService>();
 
             builder.Services.AddScoped<ICredentialsGenerator, CredentialsGenerator>();
             builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

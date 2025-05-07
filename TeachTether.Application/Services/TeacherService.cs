@@ -104,6 +104,10 @@ namespace TeachTether.Application.Services
                ?? throw new NotFoundException("Teacher not found");
 
             await _userService.UpdateAsync(teacher.UserId, request.User);
+
+            teacher.DateOfBirth = request.DateOfBirth;
+            _unitOfWork.Teachers.Update(teacher);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

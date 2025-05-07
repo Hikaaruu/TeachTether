@@ -11,8 +11,8 @@ namespace TeachTether.Application.Validators
             RuleFor(x => x.User).SetValidator(userValidator);
 
             RuleFor(x => x.DateOfBirth)
-                .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today.AddYears(-5)))
-                .WithMessage("Must be at least 5 years old.");
+                .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today.AddYears(-18)))
+                .WithMessage("Must be at least 18 years old.");
         }
     }
 }
