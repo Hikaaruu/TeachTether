@@ -20,6 +20,16 @@ namespace TeachTether.Application.Services
 
         public async Task<SchoolResponse> CreateAsync(CreateSchoolRequest request, int schoolOwnerId)
         {
+            var _ = await _unitOfWork.SchoolOwners.GetByIdAsync(schoolOwnerId)
+                ?? throw new NotFoundException("School owner not found");
+
+            if (await _unitOfWork.Schools.AnyAsync(s => 
+                s.SchoolOwnerId == schoolOwnerId && 
+                s.Name == request.Name))
+            {
+                throw new BadRequestException($"You already have school with the name \"{request.Name}\".");
+            }
+
             var school = _mapper.Map<School>(request);
             school.SchoolOwnerId = schoolOwnerId;
 

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using TeachTether.API.Errors;
+﻿using TeachTether.API.Errors;
 using TeachTether.Application.Common.Exceptions;
 
 namespace TeachTether.API.Middleware
@@ -41,6 +40,10 @@ namespace TeachTether.API.Middleware
 
                     case UnauthorizedAccessException:
                         statusCode = StatusCodes.Status401Unauthorized;
+                        break;
+
+                    case BadRequestException:
+                        statusCode = StatusCodes.Status400BadRequest;
                         break;
 
                     default:

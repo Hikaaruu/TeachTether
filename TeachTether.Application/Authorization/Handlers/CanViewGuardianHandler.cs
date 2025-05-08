@@ -66,8 +66,12 @@ namespace TeachTether.Application.Authorization.Handlers
                         if (!classGroupIds.Any())
                             return;
 
+                        var classGroupSubjectIds = (await _unitOfWork.ClassGroupsSubjects
+                            .GetAllAsync(cgs => classGroupIds.Contains(cgs.ClassGroupId)))
+                            .Select(cgs => cgs.Id);
+
                         var isAssignedToClassGroup = await _unitOfWork.ClassAssignments
-                            .AnyAsync(ca => classGroupIds.Contains(ca.ClassGroupId) && ca.TeacherId == teacher.Id);
+                            .AnyAsync(ca => classGroupSubjectIds.Contains(ca.ClassGroupSubjectId) && ca.TeacherId == teacher.Id);
 
                         var isHomeTeacher = await _unitOfWork.ClassGroups
                             .AnyAsync(cg => classGroupIds.Contains(cg.Id) &&

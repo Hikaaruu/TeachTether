@@ -9,11 +9,11 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
     {
         public ClassAssignmentRepository(ApplicationDbContext context) : base(context) { }
 
-        public async Task<IEnumerable<ClassAssignment>> GetByClassGroupIdAsync(int classGroupId)
+        public async Task<IEnumerable<ClassAssignment>> GetByClassGroupSubjectIdAsync(int classGroupSubjectId)
         {
             return await _dbSet
                 .AsNoTracking()
-                .Where(ca => ca.ClassGroupId == classGroupId)
+                .Where(ca => ca.ClassGroupSubjectId == classGroupSubjectId)
                 .ToListAsync();
         }
 

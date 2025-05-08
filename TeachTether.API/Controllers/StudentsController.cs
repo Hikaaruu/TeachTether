@@ -38,22 +38,6 @@ namespace TeachTether.API.Controllers
 
         }
 
-        //need to check for class group existence (classgroup service needed), now returns incorrect forbidden responses
-        [HttpGet("/api/schools/{schoolId}/classgroups/{classGroupId}/students")]
-        public async Task<ActionResult<IEnumerable<StudentResponse>>> GetAllByClassGroup(int schoolId, int classGroupId)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            //var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
-
-            var authResult = await _authorizationService.AuthorizeAsync(User, classGroupId, new CanViewClassGroupStudentsRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
-
-            var students = await _studentService.GetAllByClassGroupAsync(classGroupId);
-
-            return Ok(students);
-        }
-
         [HttpGet("{id}")]
         public async Task<ActionResult<StudentResponse>> Get(int id, int schoolId)
         {

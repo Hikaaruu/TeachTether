@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TeachTether.Infrastructure.Persistence.Data;
 
@@ -11,9 +12,11 @@ using TeachTether.Infrastructure.Persistence.Data;
 namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250508123120_SmallIndexChanges")]
+    partial class SmallIndexChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,7 +224,10 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ClassGroupSubjectId")
+                    b.Property<int>("ClassGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubjectId")
                         .HasColumnType("int");
 
                     b.Property<int>("TeacherId")
@@ -229,9 +235,11 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SubjectId");
+
                     b.HasIndex("TeacherId");
 
-                    b.HasIndex("ClassGroupSubjectId", "TeacherId")
+                    b.HasIndex("ClassGroupId", "SubjectId", "TeacherId")
                         .IsUnique();
 
                     b.ToTable("ClassAssignments");
@@ -915,9 +923,15 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
 
             modelBuilder.Entity("TeachTether.Domain.Entities.ClassAssignment", b =>
                 {
-                    b.HasOne("TeachTether.Domain.Entities.ClassGroupSubject", null)
+                    b.HasOne("TeachTether.Domain.Entities.ClassGroup", null)
                         .WithMany()
-                        .HasForeignKey("ClassGroupSubjectId")
+                        .HasForeignKey("ClassGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TeachTether.Domain.Entities.Subject", null)
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
