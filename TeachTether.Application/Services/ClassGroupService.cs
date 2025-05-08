@@ -4,7 +4,6 @@ using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
 using TeachTether.Domain.Entities;
-using static System.Collections.Specialized.BitVector32;
 
 namespace TeachTether.Application.Services
 {
@@ -66,6 +65,14 @@ namespace TeachTether.Application.Services
         {
             var classGroup = await _unitOfWork.ClassGroups.GetByIdAsync(id)
                  ?? throw new NotFoundException("Class Group not found");
+
+            if (await _unitOfWork.ClassGroups.AnyAsync(cg =>
+                cg.SchoolId == classGroup.SchoolId &&
+                cg.GradeYear == request.GradeYear &&
+                cg.Section == request.Section))
+            {
+                throw new BadRequestException($"Class group {request.GradeYear} - {request.Section} already exists in school {classGroup.SchoolId}.");
+            }
 
             _mapper.Map(request, classGroup);
             _unitOfWork.ClassGroups.Update(classGroup);

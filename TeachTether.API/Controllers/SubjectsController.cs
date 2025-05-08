@@ -8,25 +8,22 @@ namespace TeachTether.API.Controllers
 {
     [Route("api/schools/{schoolId}/[controller]")]
     [ApiController]
-    [Authorize]
-    public class ClassGroupsController : ControllerBase
+    public class SubjectsController : ControllerBase
     {
-        private readonly IClassGroupService _classGroupService;
+        private readonly ISubjectService _subjectService;
         private readonly ISchoolService _schoolService;
         private readonly IAuthorizationService _authorizationService;
-        private readonly ITeacherService _teacherService;
 
-        public ClassGroupsController(IClassGroupService classGroupService, ISchoolService schoolService, IAuthorizationService authorizationService, ITeacherService teacherService)
+        public SubjectsController(ISubjectService subjectService, ISchoolService schoolService, IAuthorizationService authorizationService)
         {
-            _classGroupService = classGroupService;
-            _authorizationService = authorizationService;
+            _subjectService = subjectService;
             _schoolService = schoolService;
-            _teacherService = teacherService;
+            _authorizationService = authorizationService;
         }
 
         [HttpGet]
         [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<ActionResult<IEnumerable<ClassGroupResponse>>> GetAllBySchool(int schoolId)
+        public async Task<ActionResult<IEnumerable<SubjectResponse>>> GetAllBySchool(int schoolId)
         {
             var _ = await _schoolService.GetByIdAsync(schoolId);
 
@@ -34,57 +31,53 @@ namespace TeachTether.API.Controllers
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var classGroups = await _classGroupService.GetAllBySchoolAsync(schoolId);
+            var subjects = await _subjectService.GetAllBySchoolAsync(schoolId);
 
-            return Ok(classGroups);
-
+            return Ok(subjects);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ClassGroupResponse>> Get(int id, int schoolId)
+        public async Task<ActionResult<SubjectResponse>> Get(int id, int schoolId)
         {
-            var classGroup = await _classGroupService.GetByIdAsync(id);
-            if (classGroup.SchoolId != schoolId)
+            var subject = await _subjectService.GetByIdAsync(id);
+            if (subject.SchoolId != schoolId)
                 return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewClassGroupRequirement());
+            var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewSubjectRequirement());
 
             if (!authResult.Succeeded)
                 return Forbid();
 
-            return Ok(classGroup);
+            return Ok(subject);
         }
 
         [HttpPost]
         [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<ActionResult<ClassGroupResponse>> Create(int schoolId, [FromBody] CreateClassGroupRequest request)
+        public async Task<ActionResult<SubjectResponse>> Create(int schoolId, [FromBody] CreateSubjectRequest request)
         {
             var _ = await _schoolService.GetByIdAsync(schoolId);
-            var teacher = await _teacherService.GetByIdAsync(request.HomeroomTeacherId);
-            if (teacher.SchoolId != schoolId)
-                return NotFound();
 
             var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var classGroup = await _classGroupService.CreateAsync(request, schoolId);
-            return CreatedAtAction(nameof(Get), new { id = classGroup.Id, schoolId }, classGroup);
+            var subject = await _subjectService.CreateAsync(request, schoolId);
+            return CreatedAtAction(nameof(Get), new { id = subject.Id, schoolId }, subject);
         }
 
         [HttpPut("{id}")]
         [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<IActionResult> Update(int schoolId, int id, [FromBody] UpdateClassGroupRequest request)
+        public async Task<IActionResult> Update(int schoolId, int id, [FromBody] UpdateSubjectRequest request)
         {
-            var classGroup = await _classGroupService.GetByIdAsync(id);
-            if (classGroup.SchoolId != schoolId)
+            var subject = await _subjectService.GetByIdAsync(id);
+            if (subject.SchoolId != schoolId)
                 return NotFound();
 
             var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            await _classGroupService.UpdateAsync(id, request);
+            await _subjectService.UpdateAsync(id, request);
             return NoContent();
         }
 
@@ -92,15 +85,15 @@ namespace TeachTether.API.Controllers
         [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
         public async Task<IActionResult> Delete(int schoolId, int id)
         {
-            var classGroup = await _classGroupService.GetByIdAsync(id);
-            if (classGroup.SchoolId != schoolId)
+            var subject = await _subjectService.GetByIdAsync(id);
+            if (subject.SchoolId != schoolId)
                 return NotFound();
 
             var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            await _classGroupService.DeleteAsync(id);
+            await _subjectService.DeleteAsync(id);
             return NoContent();
         }
     }

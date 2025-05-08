@@ -62,6 +62,13 @@ namespace TeachTether.Application.Services
             var school = await _unitOfWork.Schools.GetByIdAsync(id)
                      ?? throw new NotFoundException("School not found");
 
+            if (await _unitOfWork.Schools.AnyAsync(s =>
+                s.SchoolOwnerId == school.SchoolOwnerId &&
+                s.Name == request.Name))
+            {
+                throw new BadRequestException($"You already have school with the name \"{request.Name}\".");
+            }
+
             _mapper.Map(request, school);
             _unitOfWork.Schools.Update(school);
             await _unitOfWork.SaveChangesAsync();
