@@ -51,6 +51,46 @@ namespace TeachTether.Application.Services
             throw new NotImplementedException();
         }
 
+        public async Task<IEnumerable<TeacherResponse>> GetAllByClassGroupSubjectAsync(int classGroupId, int subjectId)
+        {
+            var classGroupSubject = (await _unitOfWork.ClassGroupsSubjects
+                .GetByClassGroupIdAsync(classGroupId))
+                .SingleOrDefault(cgs => cgs.SubjectId == subjectId)
+                ?? throw new BadRequestException($"Subject {subjectId} is not assigned to class group {classGroupId}");
+
+            var teachersIds = (await _unitOfWork.ClassAssignments
+                .GetByClassGroupSubjectIdAsync(classGroupSubject.Id))
+                .Select(ca => ca.TeacherId);
+
+            var teachers = await _unitOfWork.Teachers.GetByIdsAsync(teachersIds);
+
+            var userIds = teachers.Select(s => s.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var result = new List<TeacherResponse>();
+
+            foreach (var teacher in teachers)
+            {
+                if (!userMap.TryGetValue(teacher.UserId, out var user))
+                    throw new Exception($"User data can not be found for teacher with id = {teacher.Id}");
+
+                var response = new TeacherResponse
+                {
+                    User = _mapper.Map<UserDto>(user),
+                    Id = teacher.Id,
+                    SchoolId = teacher.SchoolId,
+                    DateOfBirth = teacher.DateOfBirth
+                };
+
+                result.Add(response);
+            }
+
+            return result;
+        }
+
         public async Task<IEnumerable<TeacherResponse>> GetAllBySchoolAsync(int schoolId)
         {
             var teachers = await _unitOfWork.Teachers.GetBySchoolIdAsync(schoolId);
