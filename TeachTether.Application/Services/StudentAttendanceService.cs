@@ -23,6 +23,7 @@ namespace TeachTether.Application.Services
             var studentAttendance = _mapper.Map<StudentAttendance>(request);
             studentAttendance.TeacherId = teacherId;
             studentAttendance.StudentId = studentId;
+            studentAttendance.CreatedAt = DateTime.Now;
 
             await _unitOfWork.StudentAttendances.AddAsync(studentAttendance);
             await _unitOfWork.SaveChangesAsync();

@@ -6,18 +6,18 @@ using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Authorization.Handlers
 {
-    public class CanViewStudentAttendanceHandler : AuthorizationHandler<CanViewStudentAttendanceRequirement, int>
+    public class CanViewRecordsOfStudentHandler : AuthorizationHandler<CanViewRecordsOfStudentRequirement, int>
     {
-
         private readonly IUnitOfWork _unitOfWork;
 
-        public CanViewStudentAttendanceHandler(IUnitOfWork unitOfWork)
+        public CanViewRecordsOfStudentHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanViewStudentAttendanceRequirement requirement, int attendanceId)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanViewRecordsOfStudentRequirement requirement, int studentId)
         {
+
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userType = context.User.FindFirstValue(ClaimTypes.Role);
 
@@ -26,13 +26,9 @@ namespace TeachTether.Application.Authorization.Handlers
 
             var type = Enum.Parse<UserType>(userType);
 
-            var attendance = await _unitOfWork.StudentAttendances.GetByIdAsync(attendanceId);
+            var student = await _unitOfWork.Students.GetByIdAsync(studentId);
 
-            if (attendance == null)
-                return;
-
-            var student = await _unitOfWork.Students.GetByIdAsync(attendance.StudentId);
-            if (student is null)
+            if (student == null)
                 return;
 
             var school = await _unitOfWork.Schools.GetByIdAsync(student.SchoolId);
@@ -66,7 +62,7 @@ namespace TeachTether.Application.Authorization.Handlers
                         if (classGroup == null)
                             return;
 
-                        canView = classGroup.HomeroomTeacherId == teacher.Id || attendance.TeacherId == teacher.Id;
+                        canView = classGroup.HomeroomTeacherId == teacher.Id;
                         break;
                     }
 
@@ -77,10 +73,10 @@ namespace TeachTether.Application.Authorization.Handlers
                             return;
 
                         var studentIds = (await _unitOfWork.GuardianStudents
-                        .GetByGuardianIdAsync(guardian.Id))
+                            .GetByGuardianIdAsync(guardian.Id))
                             .Select(gs => gs.StudentId);
 
-                        canView = studentIds.Contains(student.Id);
+                        canView = studentIds.Contains(studentId);
                         break;
                     }
 

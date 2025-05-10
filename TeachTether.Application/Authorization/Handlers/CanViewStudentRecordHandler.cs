@@ -6,17 +6,19 @@ using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Authorization.Handlers
 {
-    public class CanViewAttendancesOfStudentHandler : AuthorizationHandler<CanViewAttendancesOfStudentRequirement, int>
+    public class CanViewStudentRecordHandler : AuthorizationHandler<CanViewStudentRecordRequirement, (int,int)>
     {
+
         private readonly IUnitOfWork _unitOfWork;
 
-        public CanViewAttendancesOfStudentHandler(IUnitOfWork unitOfWork)
+        public CanViewStudentRecordHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanViewAttendancesOfStudentRequirement requirement, int studentId)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanViewStudentRecordRequirement requirement, (int,int) resource)
         {
+            var (studentId, subjectId) = resource;
 
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userType = context.User.FindFirstValue(ClaimTypes.Role);
@@ -27,8 +29,7 @@ namespace TeachTether.Application.Authorization.Handlers
             var type = Enum.Parse<UserType>(userType);
 
             var student = await _unitOfWork.Students.GetByIdAsync(studentId);
-
-            if (student == null)
+            if (student is null)
                 return;
 
             var school = await _unitOfWork.Schools.GetByIdAsync(student.SchoolId);
@@ -62,7 +63,17 @@ namespace TeachTether.Application.Authorization.Handlers
                         if (classGroup == null)
                             return;
 
-                        canView = classGroup.HomeroomTeacherId == teacher.Id;
+                        var classGroupSubject = (await _unitOfWork.ClassGroupsSubjects
+                            .GetByClassGroupIdAsync(classGroup.Id))
+                            .SingleOrDefault(cgs => cgs.SubjectId == subjectId);
+
+                        if (classGroupSubject == null)
+                            return;
+
+                        var isAssignedToClassGroup = await _unitOfWork.ClassAssignments
+                            .AnyAsync(ca => ca.TeacherId == teacher.Id && ca.ClassGroupSubjectId == classGroupSubject.Id);
+
+                        canView = classGroup.HomeroomTeacherId == teacher.Id || isAssignedToClassGroup;
                         break;
                     }
 
@@ -73,10 +84,10 @@ namespace TeachTether.Application.Authorization.Handlers
                             return;
 
                         var studentIds = (await _unitOfWork.GuardianStudents
-                            .GetByGuardianIdAsync(guardian.Id))
+                        .GetByGuardianIdAsync(guardian.Id))
                             .Select(gs => gs.StudentId);
 
-                        canView = studentIds.Contains(studentId);
+                        canView = studentIds.Contains(student.Id);
                         break;
                     }
 

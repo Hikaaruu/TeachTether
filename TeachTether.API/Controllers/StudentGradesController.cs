@@ -7,30 +7,30 @@ using TeachTether.Application.Interfaces.Services;
 
 namespace TeachTether.API.Controllers
 {
-    [Route("api/schools/{schoolId}/students/{studentId}/attendance")]
+    [Route("api/schools/{schoolId}/students/{studentId}/grades")]
     [ApiController]
     [Authorize]
-    public class StudentAttendancesController : ControllerBase
+    public class StudentGradesController : ControllerBase
     {
         private readonly ISchoolService _schoolService;
         private readonly IAuthorizationService _authorizationService;
         private readonly ITeacherService _teacherService;
         private readonly IStudentService _studentService;
         private readonly ISubjectService _subjectService;
-        private readonly IStudentAttendanceService _studentAttendanceService;
+        private readonly IStudentGradeService _studentGradeService;
 
-        public StudentAttendancesController(ISchoolService schoolService, IAuthorizationService authorizationService, ITeacherService teacherService, IStudentService studentService, ISubjectService subjectService, IStudentAttendanceService studentAttendanceService)
+        public StudentGradesController(ISchoolService schoolService, IAuthorizationService authorizationService, ITeacherService teacherService, IStudentService studentService, ISubjectService subjectService, IStudentGradeService studentGradeService)
         {
             _schoolService = schoolService;
             _authorizationService = authorizationService;
             _teacherService = teacherService;
             _studentService = studentService;
             _subjectService = subjectService;
-            _studentAttendanceService = studentAttendanceService;
+            _studentGradeService = studentGradeService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<StudentAttendanceResponse>>> GetAllByStudent(int studentId, int schoolId)
+        public async Task<ActionResult<IEnumerable<StudentGradeResponse>>> GetAllByStudent(int studentId, int schoolId)
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
             var student = await _studentService.GetByIdAsync(studentId);
@@ -41,32 +41,32 @@ namespace TeachTether.API.Controllers
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var studentAttendances = await _studentAttendanceService.GetAllByStudentAsync(studentId);
+            var studentGrades = await _studentGradeService.GetAllByStudentAsync(studentId);
 
-            return Ok(studentAttendances);
+            return Ok(studentGrades);
         }
 
-        [HttpGet("{attendanceId}")]
-        public async Task<ActionResult<StudentAttendanceResponse>> Get(int studentId, int schoolId, int attendanceId)
+        [HttpGet("{gradeId}")]
+        public async Task<ActionResult<StudentGradeResponse>> Get(int studentId, int schoolId, int gradeId)
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
             var student = await _studentService.GetByIdAsync(studentId);
-            var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
+            var grade = await _studentGradeService.GetByIdAsync(gradeId);
             if (student.SchoolId != schoolId ||
-                attendance.StudentId != studentId)
+                grade.StudentId != studentId)
                 return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId,attendance.SubjectId), new CanViewStudentRecordRequirement());
+            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, grade.SubjectId), new CanViewStudentRecordRequirement());
 
             if (!authResult.Succeeded)
                 return Forbid();
 
-            return Ok(attendance);
+            return Ok(grade);
         }
 
         [HttpPost]
         [Authorize(Policy = "RequireTeacher")]
-        public async Task<ActionResult<StudentAttendanceResponse>> Create(int studentId, int schoolId, [FromBody] CreateStudentAttendanceRequest request)
+        public async Task<ActionResult<StudentGradeResponse>> Create(int studentId, int schoolId, [FromBody] CreateStudentGradeRequest request)
         {
             var teacherId = int.Parse(User.FindFirstValue("entity_id")!);
 
@@ -84,49 +84,48 @@ namespace TeachTether.API.Controllers
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var studentAttendance = await _studentAttendanceService.CreateAsync(request, teacherId, studentId);
-            return CreatedAtAction(nameof(Get), new { attendanceId = studentAttendance.Id, studentId, schoolId }, studentAttendance);
+            var studentGrade = await _studentGradeService.CreateAsync(request, teacherId, studentId);
+            return CreatedAtAction(nameof(Get), new { gradeId = studentGrade.Id, studentId, schoolId }, studentGrade);
         }
 
-        [HttpPut("{attendanceId}")]
+        [HttpPut("{gradeId}")]
         [Authorize(Policy = "RequireSchoolOwnerAdminOrTeacher")]
-        public async Task<IActionResult> Update(int studentId, int schoolId, int attendanceId, [FromBody] UpdateStudentAttendanceRequest request)
+        public async Task<IActionResult> Update(int studentId, int schoolId, int gradeId, [FromBody] UpdateStudentGradeRequest request)
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
             var student = await _studentService.GetByIdAsync(studentId);
-            var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
+            var grade = await _studentGradeService.GetByIdAsync(gradeId);
 
             if (student.SchoolId != schoolId ||
-                attendance.StudentId != studentId)
+                grade.StudentId != studentId)
                 return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, attendance.SubjectId), new CanModifyStudentRecordsRequirement());
+            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, grade.SubjectId), new CanModifyStudentRecordsRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            await _studentAttendanceService.UpdateAsync(attendanceId, request);
+            await _studentGradeService.UpdateAsync(gradeId, request);
             return NoContent();
         }
 
-        [HttpDelete("{attendanceId}")]
+        [HttpDelete("{gradeId}")]
         [Authorize(Policy = "RequireSchoolOwnerAdminOrTeacher")]
-        public async Task<IActionResult> Delete(int studentId, int schoolId, int attendanceId)
+        public async Task<IActionResult> Delete(int studentId, int schoolId, int gradeId)
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
             var student = await _studentService.GetByIdAsync(studentId);
-            var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
+            var grade = await _studentGradeService.GetByIdAsync(gradeId);
 
             if (student.SchoolId != schoolId ||
-                attendance.StudentId != studentId)
+                grade.StudentId != studentId)
                 return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, attendance.SubjectId), new CanModifyStudentRecordsRequirement());
+            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, grade.SubjectId), new CanModifyStudentRecordsRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            await _studentAttendanceService.DeleteAsync(attendanceId);
+            await _studentGradeService.DeleteAsync(gradeId);
             return NoContent();
         }
-
     }
 }

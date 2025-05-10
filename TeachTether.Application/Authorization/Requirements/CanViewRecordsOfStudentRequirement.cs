@@ -2,7 +2,7 @@
 
 namespace TeachTether.Application.Authorization.Requirements
 {
-    public class CanViewAttendancesOfStudentRequirement : IAuthorizationRequirement
+    public class CanViewRecordsOfStudentRequirement : IAuthorizationRequirement
     {
     }
 }
