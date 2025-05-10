@@ -82,6 +82,41 @@ namespace TeachTether.Application.Services
             return result;
         }
 
+        public async Task<IEnumerable<GuardianResponse>> GetAllByStudentAsync(int studentId)
+        {
+            var guardianIds = (await _unitOfWork.GuardianStudents
+                 .GetByStudentIdAsync(studentId))
+                 .Select(gs => gs.GuardianId);
+
+            var guardians = await _unitOfWork.Guardians.GetByIdsAsync(guardianIds);
+
+            var userIds = guardians.Select(s => s.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var result = new List<GuardianResponse>();
+
+            foreach (var guardian in guardians)
+            {
+                if (!userMap.TryGetValue(guardian.UserId, out var user))
+                    throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
+
+                var response = new GuardianResponse
+                {
+                    User = _mapper.Map<UserDto>(user),
+                    Id = guardian.Id,
+                    SchoolId = guardian.SchoolId,
+                    DateOfBirth = guardian.DateOfBirth
+                };
+
+                result.Add(response);
+            }
+
+            return result;
+        }
+
         public async Task<GuardianResponse> GetByIdAsync(int id)
         {
             var guardian = await _unitOfWork.Guardians.GetByIdAsync(id)

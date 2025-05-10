@@ -80,6 +80,21 @@ namespace TeachTether.API
                 .AddPolicy("RequireSchoolOwner", polBuilder =>
                     polBuilder.RequireClaim(ClaimTypes.Role, UserType.SchoolOwner.ToString())
                 )
+                .AddPolicy("RequireTeacher", polBuilder =>
+                    polBuilder.RequireClaim(ClaimTypes.Role, UserType.Teacher.ToString())
+                )
+                .AddPolicy("RequireSchoolOwnerAdminOrTeacher", policyBuilder =>
+                    policyBuilder.RequireAssertion(context =>
+                        context.User.HasClaim(c =>
+                            c.Type == ClaimTypes.Role &&
+                            (
+                                c.Value == UserType.SchoolOwner.ToString() ||
+                                c.Value == UserType.SchoolAdmin.ToString() ||
+                                c.Value == UserType.Teacher.ToString()
+                            )
+                        )
+                    )
+                )
                 .AddPolicy("RequireSchoolOwnerOrAdmin", policyBuilder =>
                     policyBuilder.RequireAssertion(context =>
                         context.User.HasClaim(c =>
@@ -98,6 +113,12 @@ namespace TeachTether.API
             builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewTeacherHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewGuardianHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewClassAssignmentsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupSubjectsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewGuardianStudentsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentGuardiansHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewSubjectHandler>();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
 
@@ -131,10 +152,16 @@ namespace TeachTether.API
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
             builder.Services.AddScoped<IGuardianService, GuardianService>();
+            builder.Services.AddScoped<IClassAssignmentService, ClassAssignmentService>();
+            builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
+            builder.Services.AddScoped<IClassGroupStudentService, ClassGroupStudentService>();
+            builder.Services.AddScoped<IClassGroupSubjectService, ClassGroupSubjectService>();
+            builder.Services.AddScoped<IGuardianStudentService, GuardianStudentService>();
+            builder.Services.AddScoped<ISubjectService, SubjectService>();
 
             builder.Services.AddScoped<ICredentialsGenerator, CredentialsGenerator>();
             builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-            
+
 
             var app = builder.Build();
 
