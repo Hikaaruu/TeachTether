@@ -24,4 +24,8 @@
     <ProjectReference Include="..\TeachTether.Infrastructure.Persistence\TeachTether.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\" />
+  </ItemGroup>
+
 </Project>

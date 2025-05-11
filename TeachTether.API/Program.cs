@@ -20,6 +20,8 @@ using TeachTether.Domain.Entities;
 using System.Security.Claims;
 using TeachTether.Application.Common.Interfaces;
 using TeachTether.Application.Common.Services;
+using TeachTether.Infrastructure.Persistence.FileStorage.Common;
+using TeachTether.Infrastructure.Persistence.FileStorage.Repositories;
 
 namespace TeachTether.API
 {
@@ -102,6 +104,14 @@ namespace TeachTether.API
                             (c.Value == UserType.SchoolOwner.ToString() || c.Value == UserType.SchoolAdmin.ToString())
                         )
                     )
+                )
+                .AddPolicy("RequireTeacherOrGuardian", policyBuilder =>
+                    policyBuilder.RequireAssertion(context =>
+                        context.User.HasClaim(c =>
+                            c.Type == ClaimTypes.Role &&
+                            (c.Value == UserType.Teacher.ToString() || c.Value == UserType.Guardian.ToString())
+                        )
+                    )
                 );
 
             builder.Services.AddAutoMapper(typeof(UserMappingProfile));
@@ -121,6 +131,9 @@ namespace TeachTether.API
             builder.Services.AddScoped<IAuthorizationHandler, CanViewSubjectHandler>();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
+            builder.Services.Configure<FileStorageOptions>(opt =>
+                opt.RootPath = builder.Environment.WebRootPath);
+
 
             builder.Services.AddScoped<IAnnouncementClassGroupRepository, AnnouncementClassGroupRepository>();
             builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
@@ -144,6 +157,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<IFileStorageRepository, FileStorageRepository>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ISchoolService, SchoolService>();
@@ -158,6 +172,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<IClassGroupSubjectService, ClassGroupSubjectService>();
             builder.Services.AddScoped<IGuardianStudentService, GuardianStudentService>();
             builder.Services.AddScoped<ISubjectService, SubjectService>();
+            builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
             builder.Services.AddScoped<ICredentialsGenerator, CredentialsGenerator>();
             builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
