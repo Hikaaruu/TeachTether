@@ -69,16 +69,54 @@ namespace TeachTether.Application.Services
                         var guardian = await _unitOfWork.Guardians.GetByUserIdAsync(userId)
                             ?? throw new NotFoundException("Guardian not found");
 
-                        announcements = await _unitOfWork.Announcements.GetAllAsync((a => a.TargetAudience == AudienceType.Guardian || a.TargetAudience == AudienceType.StudentAndGuardian));
+                        var studentIds = (await _unitOfWork.GuardianStudents
+                            .GetByGuardianIdAsync(guardian.Id))
+                            .Select(gs => gs.StudentId);
+
+                        var classGroupIds = (await _unitOfWork.ClassGroupStudents
+                            .GetAllAsync(cgs => studentIds.Contains(cgs.StudentId)))
+                            .Select(cgs => cgs.ClassGroupId);
+
+                        var announcementIds = (await _unitOfWork.AnnouncementClassGroups
+                            .GetAllAsync(acg => classGroupIds.Contains(acg.ClassGroupId)))
+                            .Select(acg => acg.AnnouncementId);
+
+                        announcements = (await _unitOfWork.Announcements.GetByIdsAsync(announcementIds))
+                            .Where(a => a.TargetAudience == AudienceType.Guardian || a.TargetAudience == AudienceType.StudentAndGuardian);                            
+                            
+                        break;
+                    }
+
+                case UserType.Student:
+                    {
+                        var student = await _unitOfWork.Students.GetByUserIdAsync(userId)
+                            ?? throw new NotFoundException("Student not found");
+
+                        var classGroupStudent = await _unitOfWork.ClassGroupStudents
+                            .GetByStudentIdAsync(student.Id);
+
+                        if (classGroupStudent is null)
+                        {
+                            announcements = new List<Announcement>();
+                            break;
+                        }
+
+                        var announcementIds = (await _unitOfWork.AnnouncementClassGroups
+                            .GetByClassGroupIdAsync(classGroupStudent.ClassGroupId))
+                            .Select(acg => acg.AnnouncementId);
+
+                        announcements = (await _unitOfWork.Announcements.GetByIdsAsync(announcementIds))
+                            .Where(a => a.TargetAudience == AudienceType.Student || a.TargetAudience == AudienceType.StudentAndGuardian);
+
                         break;
                     }
 
                 default:
                     throw new Exception("Unexpected behavior occurred");
+
+
             }
-
-
-            return _mapper.Map<IEnumerable<MessageThreadResponse>>(threads);
+            return _mapper.Map<IEnumerable<AnnouncementResponse>>(announcements);
         }
 
         public async Task<AnnouncementResponse> GetByIdAsync(int id)
