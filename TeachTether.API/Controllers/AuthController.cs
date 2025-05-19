@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
@@ -18,12 +19,12 @@ namespace TeachTether.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            var result = await _authService.RegisterAsync(request);
+            var (result, token) = await _authService.RegisterAsync(request);
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            return Ok();
+            return Ok(new { Token = token });
         }
 
         [HttpPost]
@@ -36,5 +37,17 @@ namespace TeachTether.API.Controllers
 
             return Ok(new { Token = token });
         }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Me()
+        {
+            var userInfo = await _authService.GetCurrentUserInfoAsync(User);
+            if (userInfo == null)
+                return Unauthorized();
+
+            return Ok(userInfo);
+        }
+
     }
 }

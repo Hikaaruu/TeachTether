@@ -24,6 +24,12 @@ namespace TeachTether.Application.Mapping
             CreateMap<User, UserDto>()
                 .ForMember(dest => dest.Sex, opt => opt.MapFrom(src => 
                     src.Sex.ToString()));
+
+            CreateMap<User, UserInfoResponse>()
+                .ForMember(dest => dest.Sex, opt => opt.MapFrom(src =>
+                    src.Sex.ToString()))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src =>
+                    src.UserType.ToString()));
         }
     }
 }
