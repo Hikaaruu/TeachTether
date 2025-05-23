@@ -33,12 +33,15 @@ namespace TeachTether.Application.Services
 
         public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            var grade = await _unitOfWork.StudentGrades.GetByIdAsync(id)
+                ?? throw new NotFoundException("Grade Record not found");
+            _unitOfWork.StudentGrades.Delete(grade);
+            await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<StudentGradeResponse>> GetAllByStudentAsync(int studentId)
+        public async Task<IEnumerable<StudentGradeResponse>> GetAllByStudentAsync(int studentId, int subjectId)
         {
-            var studentGrades = await _unitOfWork.StudentGrades.GetByStudentIdAsync(studentId);
+            var studentGrades = await _unitOfWork.StudentGrades.GetAllAsync(sg => sg.StudentId == studentId && sg.SubjectId == subjectId);
             return _mapper.Map<IEnumerable<StudentGradeResponse>>(studentGrades);
         }
 

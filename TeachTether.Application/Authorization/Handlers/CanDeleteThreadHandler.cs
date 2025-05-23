@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
+using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Authorization.Handlers
 {
-    public class CanDeleteThreadHandler : AuthorizationHandler<CanDeleteThreadRequirement, MessageThread>
+    public class CanDeleteThreadHandler : AuthorizationHandler<CanDeleteThreadRequirement, MessageThreadResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -15,7 +16,7 @@ namespace TeachTether.Application.Authorization.Handlers
             _unitOfWork = unitOfWork;
         }
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanDeleteThreadRequirement requirement, MessageThread thread)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanDeleteThreadRequirement requirement, MessageThreadResponse thread)
         {
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userType = context.User.FindFirstValue(ClaimTypes.Role);

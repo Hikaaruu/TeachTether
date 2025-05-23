@@ -30,19 +30,20 @@ namespace TeachTether.API.Controllers
             _studentBehaviorService = studentBehaviorService;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<StudentBehaviorResponse>>> GetAllByStudent(int studentId, int schoolId)
+        [HttpGet("/api/schools/{schoolId}/students/{studentId}/behavior/subjects/{subjectId}")]
+        public async Task<ActionResult<IEnumerable<StudentBehaviorResponse>>> GetAllByStudent(int studentId, int schoolId, int subjectId)
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
             var student = await _studentService.GetByIdAsync(studentId);
-            if (student.SchoolId != schoolId)
+            var subject = await _subjectService.GetByIdAsync(subjectId);
+            if (student.SchoolId != schoolId || subject.SchoolId != schoolId)
                 return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, studentId, new CanViewRecordsOfStudentRequirement());
+            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId,subjectId), new CanViewRecordsOfStudentRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var studentBehaviors = await _studentBehaviorService.GetAllByStudentAsync(studentId);
+            var studentBehaviors = await _studentBehaviorService.GetAllByStudentAsync(studentId, subjectId);
 
             return Ok(studentBehaviors);
         }

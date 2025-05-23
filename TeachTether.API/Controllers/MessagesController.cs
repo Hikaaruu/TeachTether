@@ -37,7 +37,7 @@ namespace TeachTether.API.Controllers
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var messages = _messageService.GetAllAsync(threadId);
+            var messages = await _messageService.GetAllAsync(threadId);
             return Ok(messages);
         }
 

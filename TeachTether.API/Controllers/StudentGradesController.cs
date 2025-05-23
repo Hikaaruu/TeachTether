@@ -29,19 +29,20 @@ namespace TeachTether.API.Controllers
             _studentGradeService = studentGradeService;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<StudentGradeResponse>>> GetAllByStudent(int studentId, int schoolId)
+        [HttpGet("/api/schools/{schoolId}/students/{studentId}/grades/subjects/{subjectId}")]
+        public async Task<ActionResult<IEnumerable<StudentGradeResponse>>> GetAllByStudent(int studentId, int schoolId, int subjectId)
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
             var student = await _studentService.GetByIdAsync(studentId);
-            if (student.SchoolId != schoolId)
+            var subject = await _subjectService.GetByIdAsync(subjectId);
+            if (student.SchoolId != schoolId || subject.SchoolId != schoolId)
                 return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, studentId, new CanViewRecordsOfStudentRequirement());
+            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId,subjectId), new CanViewRecordsOfStudentRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var studentGrades = await _studentGradeService.GetAllByStudentAsync(studentId);
+            var studentGrades = await _studentGradeService.GetAllByStudentAsync(studentId,subjectId);
 
             return Ok(studentGrades);
         }

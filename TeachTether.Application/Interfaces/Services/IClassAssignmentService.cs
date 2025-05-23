@@ -6,5 +6,6 @@ namespace TeachTether.Application.Interfaces.Services
     {
         Task CreateAsync(CreateClassAssignmentRequest request, int classGroupId, int subjectId);
         Task DeleteAsync(int classGroupId, int subjectId, int teacherId);
+        Task<IEnumerable<ClassAssignmentResponse>> GetByTeacherAsync(int teacherId);
     }
 }

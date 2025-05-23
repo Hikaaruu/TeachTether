@@ -129,5 +129,17 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
             };
         }
 
+        public async Task<OperationResult> DeleteAsync(string userId)
+        {
+            var appUser = await _userManager.FindByIdAsync(userId);
+            if (appUser is null)
+                return OperationResult.Failure(["User not found."]);
+
+            var identityResult = await _userManager.DeleteAsync(appUser);
+
+            return identityResult.Succeeded
+                ? OperationResult.Success()
+                : OperationResult.Failure(identityResult.Errors.Select(e => e.Description));
+        }
     }
 }

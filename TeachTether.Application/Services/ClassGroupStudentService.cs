@@ -21,10 +21,9 @@ namespace TeachTether.Application.Services
         public async Task CreateAsync(CreateClassGroupStudentRequest request, int classGroupId)
         {
             if (await _unitOfWork.ClassGroupStudents.AnyAsync(cgs => 
-            cgs.ClassGroupId == classGroupId &&
             cgs.StudentId == request.StudentId))
             {
-                throw new BadRequestException($"Student {request.StudentId} is already in class group {classGroupId}.");
+                throw new BadRequestException($"Student {request.StudentId} is already in class group.");
             }
 
             var classGroupStudent = _mapper.Map<ClassGroupStudent>(request);

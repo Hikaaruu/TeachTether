@@ -3,6 +3,7 @@ using TeachTether.Application.Common.Exceptions;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
+using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Services
@@ -11,11 +12,13 @@ namespace TeachTether.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IClassGroupsSubjectDeletionHelper _deletionHelper;
 
-        public ClassGroupSubjectService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ClassGroupSubjectService(IUnitOfWork unitOfWork, IMapper mapper, IClassGroupsSubjectDeletionHelper deletionHelper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _deletionHelper = deletionHelper;
         }
 
         public async Task CreateAsync(CreateClassGroupSubjectRequest request, int classGroupId)
@@ -41,8 +44,7 @@ namespace TeachTether.Application.Services
                 .SingleOrDefault(cgs => cgs.SubjectId == subjectId)            
                 ?? throw new NotFoundException("Subject is not assigned to this class group");
 
-            _unitOfWork.ClassGroupsSubjects.Delete(classGroupSubject);
-            await _unitOfWork.SaveChangesAsync();
+            await _deletionHelper.DeleteClassGroupsSubjectAsync(classGroupSubject.Id);
         }
     }
 }

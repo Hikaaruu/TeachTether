@@ -6,7 +6,7 @@ using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Authorization.Handlers
 {
-    public class CanViewRecordsOfStudentHandler : AuthorizationHandler<CanViewRecordsOfStudentRequirement, int>
+    public class CanViewRecordsOfStudentHandler : AuthorizationHandler<CanViewRecordsOfStudentRequirement, (int,int)>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -15,9 +15,9 @@ namespace TeachTether.Application.Authorization.Handlers
             _unitOfWork = unitOfWork;
         }
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanViewRecordsOfStudentRequirement requirement, int studentId)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanViewRecordsOfStudentRequirement requirement, (int,int) resource)
         {
-
+            var (studentId, subjectId) = resource;
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userType = context.User.FindFirstValue(ClaimTypes.Role);
 
@@ -62,13 +62,19 @@ namespace TeachTether.Application.Authorization.Handlers
                         if (classGroup == null)
                             return;
 
-                        canView = classGroup.HomeroomTeacherId == teacher.Id;
+                        var classGroupSubjectIds = (await _unitOfWork.ClassGroupsSubjects
+                            .GetAllAsync(cgs => cgs.SubjectId == subjectId && cgs.ClassGroupId == classGroup.Id))
+                            .Select(cgs => cgs.Id);
+                        var isAssignedToClassGroup = await _unitOfWork.ClassAssignments
+                            .AnyAsync(ca => classGroupSubjectIds.Contains(ca.ClassGroupSubjectId) && ca.TeacherId == teacher.Id);
+
+                        canView = classGroup.HomeroomTeacherId == teacher.Id || isAssignedToClassGroup;
                         break;
                     }
 
                 case UserType.Guardian:
                     {
-                        var guardian = _unitOfWork.Guardians.GetByUserIdAsync(userId);
+                        var guardian = await _unitOfWork.Guardians.GetByUserIdAsync(userId);
                         if (guardian == null)
                             return;
 

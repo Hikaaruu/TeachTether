@@ -1,27 +1,29 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using TeachTether.Infrastructure.Persistence.Data;
-using TeachTether.Application.Validators;
-using FluentValidation.AspNetCore;
-using FluentValidation;
-using TeachTether.Application.Interfaces.Services;
-using TeachTether.Application.Interfaces.Repositories;
-using TeachTether.Infrastructure.Persistence.Repositories;
-using TeachTether.Application.Mapping;
-using TeachTether.Application.Settings;
-using TeachTether.Application.Services;
+using System.Security.Claims;
 using TeachTether.API.Errors;
 using TeachTether.API.Middleware;
-using Microsoft.AspNetCore.Authorization;
 using TeachTether.Application.Authorization.Handlers;
-using TeachTether.Domain.Entities;
-using System.Security.Claims;
 using TeachTether.Application.Common.Interfaces;
 using TeachTether.Application.Common.Services;
+using TeachTether.Application.Interfaces.Repositories;
+using TeachTether.Application.Interfaces.Services;
+using TeachTether.Application.Interfaces.Services.DeletionHelpers;
+using TeachTether.Application.Mapping;
+using TeachTether.Application.Services;
+using TeachTether.Application.Services.DeletionHelpers;
+using TeachTether.Application.Settings;
+using TeachTether.Application.Validators;
+using TeachTether.Domain.Entities;
+using TeachTether.Infrastructure.Persistence.Data;
 using TeachTether.Infrastructure.Persistence.FileStorage.Common;
 using TeachTether.Infrastructure.Persistence.FileStorage.Repositories;
+using TeachTether.Infrastructure.Persistence.Repositories;
 
 namespace TeachTether.API
 {
@@ -85,6 +87,9 @@ namespace TeachTether.API
                 .AddPolicy("RequireTeacher", polBuilder =>
                     polBuilder.RequireClaim(ClaimTypes.Role, UserType.Teacher.ToString())
                 )
+                 .AddPolicy("RequireGuardian", polBuilder =>
+                    polBuilder.RequireClaim(ClaimTypes.Role, UserType.Guardian.ToString())
+                )
                 .AddPolicy("RequireSchoolOwnerAdminOrTeacher", policyBuilder =>
                     policyBuilder.RequireAssertion(context =>
                         context.User.HasClaim(c =>
@@ -116,19 +121,31 @@ namespace TeachTether.API
 
             builder.Services.AddAutoMapper(typeof(UserMappingProfile));
 
+            builder.Services.AddScoped<IAuthorizationHandler, CanCreateAnnouncementHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanCreateMessageHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanCreateStudentRecordsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanCreateThreadHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanDeleteThreadHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanManageAnnouncementHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanManageSchoolHandler>();
-            builder.Services.AddScoped<IAuthorizationHandler, CanViewSchoolHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanManageSchoolEntitiesHandler>();
-            builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupStudentsHandler>();
-            builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentHandler>();
-            builder.Services.AddScoped<IAuthorizationHandler, CanViewTeacherHandler>();
-            builder.Services.AddScoped<IAuthorizationHandler, CanViewGuardianHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanModifyStudentRecordsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewAnnouncementHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewClassAssignmentsHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupStudentsHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewClassGroupSubjectsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewGuardianHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewGuardianStudentsHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewRecordsOfStudentHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewSchoolHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentGuardiansHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewStudentRecordHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, CanViewSubjectHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewTeacherHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, CanViewThreadHandler>();
+
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
             builder.Services.Configure<FileStorageOptions>(opt =>
@@ -159,6 +176,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IFileStorageRepository, FileStorageRepository>();
 
+            builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ISchoolService, SchoolService>();
             builder.Services.AddScoped<IStudentService, StudentService>();
@@ -173,6 +191,26 @@ namespace TeachTether.API
             builder.Services.AddScoped<IGuardianStudentService, GuardianStudentService>();
             builder.Services.AddScoped<ISubjectService, SubjectService>();
             builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+            builder.Services.AddScoped<IMessageAttachmentService, MessageAttachmentService>();
+            builder.Services.AddScoped<IMessageService, MessageService>();
+            builder.Services.AddScoped<IMessageThreadService, MessageThreadService>();
+            builder.Services.AddScoped<IStudentAttendanceService, StudentAttendanceService>();
+            builder.Services.AddScoped<IStudentGradeService, StudentGradeService>();
+            builder.Services.AddScoped<IStudentBehaviorService, StudentBehaviorService>();
+            builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
+            builder.Services.AddScoped<IAnnouncementDeletionHelper, AnnouncementDeletionHelper>();
+            builder.Services.AddScoped<IClassGroupDeletionHelper, ClassGroupDeletionHelper>();
+            builder.Services.AddScoped<IClassGroupsSubjectDeletionHelper, ClassGroupsSubjectDeletionHelper>();
+            builder.Services.AddScoped<IGuardianDeletionHelper, GuardianDeletionHelper>();
+            builder.Services.AddScoped<IMessageDeletionHelper, MessageDeletionHelper>();
+            builder.Services.AddScoped<IMessageThreadDeletionHelper, MessageThreadDeletionHelper>();
+            builder.Services.AddScoped<ISchoolAdminDeletionHelper, SchoolAdminDeletionHelper>();
+            builder.Services.AddScoped<ISchoolDeletionHelper, SchoolDeletionHelper>();
+            builder.Services.AddScoped<IStudentDeletionHelper, StudentDeletionHelper>();
+            builder.Services.AddScoped<ISubjectDeletionHelper, SubjectDeletionHelper>();
+            builder.Services.AddScoped<ITeacherDeletionHelper, TeacherDeletionHelper>();
+
 
             builder.Services.AddScoped<ICredentialsGenerator, CredentialsGenerator>();
             builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

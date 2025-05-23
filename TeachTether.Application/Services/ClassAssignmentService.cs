@@ -55,5 +55,40 @@ namespace TeachTether.Application.Services
             _unitOfWork.ClassAssignments.Delete(classAssignment);
             await _unitOfWork.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<ClassAssignmentResponse>> GetByTeacherAsync(int teacherId)
+        {
+            var assignments = await _unitOfWork.ClassAssignments.GetByTeacherIdAsync(teacherId);
+            var result = new List<ClassAssignmentResponse>();
+            foreach (var assignment in assignments)
+            {
+                var cgs = await _unitOfWork.ClassGroupsSubjects.GetByIdAsync(assignment.ClassGroupSubjectId);
+
+                if (cgs == null)
+                    throw new Exception();
+
+                var classGroup = await _unitOfWork.ClassGroups.GetByIdAsync(cgs.ClassGroupId);
+
+                if (classGroup == null)
+                    throw new Exception();
+
+                var subject = await _unitOfWork.Subjects.GetByIdAsync(cgs.SubjectId);
+
+                if (subject == null)
+                    throw new Exception();
+
+                var assignmentResponse = new ClassAssignmentResponse()
+                {
+                    ClassGroupId = classGroup.Id,
+                    ClassGroupName = $"{classGroup.GradeYear} - {classGroup.Section}",
+                    SubjectId = cgs.SubjectId,
+                    SubjectName = subject.Name
+                };
+
+                result.Add(assignmentResponse);
+            }
+
+            return result;
+        }
     }
 }

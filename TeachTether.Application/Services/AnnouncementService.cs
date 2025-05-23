@@ -3,6 +3,7 @@ using TeachTether.Application.Common.Exceptions;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
+using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Services
@@ -12,12 +13,14 @@ namespace TeachTether.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
+        private readonly IAnnouncementDeletionHelper _announcementDeletionHelper;
 
-        public AnnouncementService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService)
+        public AnnouncementService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService, IAnnouncementDeletionHelper announcementDeletionHelper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userService = userService;
+            _announcementDeletionHelper = announcementDeletionHelper;
         }
 
         public async Task<AnnouncementResponse> CreateAsync(CreateAnnouncementRequest request, int teacherId)
@@ -27,6 +30,7 @@ namespace TeachTether.Application.Services
             announcement.CreatedAt = DateTime.Now;
 
             await _unitOfWork.Announcements.AddAsync(announcement);
+            await _unitOfWork.SaveChangesAsync();
 
             foreach (var item in request.ClassGroupIds)
             {
@@ -43,8 +47,28 @@ namespace TeachTether.Application.Services
 
         public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            await _announcementDeletionHelper.DeleteAnnouncementAsync(id);
         }
+
+        //rewrite
+        public async Task<IEnumerable<AnnouncementResponse>> GetAllBySchoolId(int schoolId)
+        {
+            var announcements = await _unitOfWork.Announcements.GetAllAsync();
+            var result = new List<Announcement>();
+
+            foreach (var announcement in announcements)
+            {
+                var teacher = await _unitOfWork.Teachers.GetByIdAsync(announcement.TeacherId);
+                if (teacher != null && teacher.SchoolId == schoolId)
+                {
+                    result.Add(announcement);
+                }
+            }
+
+            return _mapper.Map<IEnumerable<AnnouncementResponse>>(result);
+        }
+
+
 
         public async Task<IEnumerable<AnnouncementResponse>> GetAllForUserAsync(string userId)
         {

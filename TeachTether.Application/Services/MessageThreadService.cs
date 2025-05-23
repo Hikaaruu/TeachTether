@@ -3,6 +3,7 @@ using TeachTether.Application.Common.Exceptions;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
+using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Services
@@ -12,12 +13,14 @@ namespace TeachTether.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
+        private readonly IMessageThreadDeletionHelper _messageThreadDeletionHelper;
 
-        public MessageThreadService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService)
+        public MessageThreadService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService, IMessageThreadDeletionHelper messageThreadDeletionHelper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userService = userService;
+            _messageThreadDeletionHelper = messageThreadDeletionHelper;
         }
 
         public async Task<MessageThreadResponse> CreateAsync(CreateMessageThreadRequest request)
@@ -39,7 +42,7 @@ namespace TeachTether.Application.Services
 
         public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            await _messageThreadDeletionHelper.DeleteMessageThreadAsync(id);
         }
 
         public async Task<IEnumerable<MessageThreadResponse>> GetAllForUserAsync(string userId)

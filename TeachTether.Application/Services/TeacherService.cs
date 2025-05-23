@@ -4,6 +4,7 @@ using TeachTether.Application.Common.Models;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
+using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Services
@@ -13,12 +14,14 @@ namespace TeachTether.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserService _userService;
         private readonly IMapper _mapper;
+        private readonly ITeacherDeletionHelper _teacherDeletionHelper;
 
-        public TeacherService(IUnitOfWork unitOfWork, IUserService userService, IMapper mapper)
+        public TeacherService(IUnitOfWork unitOfWork, IUserService userService, IMapper mapper, ITeacherDeletionHelper teacherDeletionHelper)
         {
             _unitOfWork = unitOfWork;
             _userService = userService;
             _mapper = mapper;
+            _teacherDeletionHelper = teacherDeletionHelper;
         }
 
         public async Task<CreatedTeacherResponse> CreateAsync(CreateTeacherRequest request, int schoolId)
@@ -46,9 +49,9 @@ namespace TeachTether.Application.Services
             };
         }
 
-        public Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            await _teacherDeletionHelper.DeleteTeacherAsync(id);
         }
 
         public async Task<IEnumerable<TeacherResponse>> GetAllByClassGroupSubjectAsync(int classGroupId, int subjectId)
@@ -94,6 +97,56 @@ namespace TeachTether.Application.Services
         public async Task<IEnumerable<TeacherResponse>> GetAllBySchoolAsync(int schoolId)
         {
             var teachers = await _unitOfWork.Teachers.GetBySchoolIdAsync(schoolId);
+
+            var userIds = teachers.Select(s => s.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var result = new List<TeacherResponse>();
+
+            foreach (var teacher in teachers)
+            {
+                if (!userMap.TryGetValue(teacher.UserId, out var user))
+                    throw new Exception($"User data can not be found for teacher with id = {teacher.Id}");
+
+                var response = new TeacherResponse
+                {
+                    User = _mapper.Map<UserDto>(user),
+                    Id = teacher.Id,
+                    SchoolId = teacher.SchoolId,
+                    DateOfBirth = teacher.DateOfBirth
+                };
+
+                result.Add(response);
+            }
+
+            return result;
+        }
+
+        public async Task<IEnumerable<TeacherResponse>> GetAvailableForGuardianAsync(int guardianId)
+        {
+            var studentIds = (await _unitOfWork.GuardianStudents
+                            .GetByGuardianIdAsync(guardianId))
+                            .Select(gs => gs.StudentId);
+
+            var classGroupIds = (await _unitOfWork.ClassGroupStudents
+                .GetAllAsync(cgs => studentIds.Contains(cgs.StudentId)))
+                .Select(cgs => cgs.ClassGroupId);
+
+            var hmTeacherIds = (await _unitOfWork.ClassGroups.GetByIdsAsync(classGroupIds))
+                .Select(cg => cg.HomeroomTeacherId);
+
+            var classGroupSubjectIds = (await _unitOfWork.ClassGroupsSubjects
+                .GetAllAsync(cgs => classGroupIds.Contains(cgs.ClassGroupId)))
+                .Select(cgs => cgs.Id);
+
+            var teacherIds = (await _unitOfWork.ClassAssignments
+                .GetAllAsync(ca => classGroupSubjectIds.Contains(ca.ClassGroupSubjectId)))
+                .Select(ca => ca.TeacherId);
+
+            var teachers = await _unitOfWork.Teachers.GetByIdsAsync(hmTeacherIds.Union(teacherIds));
 
             var userIds = teachers.Select(s => s.UserId);
             var users = await _userService.GetByIdsAsync(userIds);

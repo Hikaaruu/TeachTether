@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
@@ -17,14 +18,16 @@ namespace TeachTether.API.Controllers
         private readonly ITeacherService _teacherService;
         private readonly IGuardianService _guardianService;
         private readonly IClassGroupService _classGroupService;
+        private readonly ISchoolService _schoolService;
 
-        public AnnouncementsController(IAuthorizationService authorizationService, IAnnouncementService announcementService, ITeacherService teacherService, IGuardianService guardianService, IClassGroupService classGroupService)
+        public AnnouncementsController(IAuthorizationService authorizationService, IAnnouncementService announcementService, ITeacherService teacherService, IGuardianService guardianService, IClassGroupService classGroupService, ISchoolService schoolService)
         {
             _authorizationService = authorizationService;
             _announcementService = announcementService;
             _teacherService = teacherService;
             _guardianService = guardianService;
             _classGroupService = classGroupService;
+            _schoolService = schoolService;
         }
 
         [HttpGet]
@@ -32,6 +35,17 @@ namespace TeachTether.API.Controllers
         {
             var announcements = await _announcementService
                 .GetAllForUserAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            return Ok(announcements);
+        }
+
+        [HttpGet("/api/schools/{schoolId}/announcements")]
+        [Authorize("RequireSchoolOwnerOrAdmin")]
+        public async Task<ActionResult<IEnumerable<AnnouncementResponse>>> GetBySchool(int schoolId)
+        {
+            var school = await _schoolService.GetByIdAsync(schoolId);
+
+            var announcements = await _announcementService
+                .GetAllBySchoolId(schoolId);
             return Ok(announcements);
         }
 

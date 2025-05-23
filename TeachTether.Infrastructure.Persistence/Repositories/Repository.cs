@@ -40,5 +40,10 @@ namespace TeachTether.Infrastructure.Persistence.Repositories
         {
             return await _dbSet.AsNoTracking().Where(e => ids.Contains(EF.Property<int>(e, "Id"))).ToListAsync();
         }
+
+        public void DeleteMany(IEnumerable<T> entities)
+        {
+            _dbSet.RemoveRange(entities);
+        }
     }
 }

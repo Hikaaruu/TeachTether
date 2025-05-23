@@ -2,9 +2,10 @@
 using TeachTether.Application.Common.Exceptions;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
+using TeachTether.Application.Interfaces.Services;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Interfaces.Services
+namespace TeachTether.Application.Services
 {
     public class StudentBehaviorService : IStudentBehaviorService
     {
@@ -32,12 +33,15 @@ namespace TeachTether.Application.Interfaces.Services
 
         public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            var behavior = await _unitOfWork.StudentBehaviors.GetByIdAsync(id)
+                ?? throw new NotFoundException("Behavior Record not found");
+            _unitOfWork.StudentBehaviors.Delete(behavior);
+            await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<StudentBehaviorResponse>> GetAllByStudentAsync(int studentId)
+        public async Task<IEnumerable<StudentBehaviorResponse>> GetAllByStudentAsync(int studentId, int subjectId)
         {
-            var studentBehaviors = await _unitOfWork.StudentBehaviors.GetByStudentIdAsync(studentId);
+            var studentBehaviors = await _unitOfWork.StudentBehaviors.GetAllAsync(sg => sg.StudentId == studentId && sg.SubjectId == subjectId);
             return _mapper.Map<IEnumerable<StudentBehaviorResponse>>(studentBehaviors);
         }
 

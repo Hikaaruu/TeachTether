@@ -61,19 +61,47 @@ namespace TeachTether.Application.Services
             var dbUser = await _userService.GetByIdAsync(userId);
             if (dbUser == null) return null;
 
-            var entityId = dbUser.UserType switch
+            int? entityId = null;
+            int? schoolId = null;
+
+            switch (dbUser.UserType)
             {
-                UserType.Student => (await _unitOfWork.Students.GetByUserIdAsync(userId))?.Id,
-                UserType.Teacher => (await _unitOfWork.Teachers.GetByUserIdAsync(userId))?.Id,
-                UserType.Guardian => (await _unitOfWork.Guardians.GetByUserIdAsync(userId))?.Id,
-                UserType.SchoolAdmin => (await _unitOfWork.SchoolAdmins.GetByUserIdAsync(userId))?.Id,
-                UserType.SchoolOwner => (await _unitOfWork.SchoolOwners.GetByUserIdAsync(userId))?.Id,
-                _ => null
-            };
+                case UserType.Student:
+                    var student = await _unitOfWork.Students.GetByUserIdAsync(userId);
+                    entityId = student?.Id;
+                    schoolId = student?.SchoolId;
+                    break;
+                case UserType.Teacher:
+                    var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId);
+                    entityId = teacher?.Id;
+                    schoolId = teacher?.SchoolId;
+                    break;
+                case UserType.Guardian:
+                    var guardian = await _unitOfWork.Guardians.GetByUserIdAsync(userId);
+                    entityId = guardian?.Id;
+                    schoolId = guardian?.SchoolId;
+                    break;
+                case UserType.SchoolAdmin:
+                    var admin = await _unitOfWork.SchoolAdmins.GetByUserIdAsync(userId);
+                    entityId = admin?.Id;
+                    schoolId = admin?.SchoolId;
+                    break;
+                case UserType.SchoolOwner:
+                    var owner = await _unitOfWork.SchoolOwners.GetByUserIdAsync(userId);
+                    entityId = owner?.Id;
+                    schoolId = null; // owners don't have a fixed school
+                    break;
+            }
+
+            if (entityId == null)
+                return null;
 
             var userInfo = _mapper.Map<UserInfoResponse>(dbUser);
-            userInfo.EntityId = entityId!.Value;
+            userInfo.EntityId = entityId.Value;
+            userInfo.SchoolId = schoolId;
+
             return userInfo;
         }
+
     }
 }

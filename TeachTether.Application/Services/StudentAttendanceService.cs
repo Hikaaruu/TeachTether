@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System.Reflection.Metadata.Ecma335;
 using TeachTether.Application.Common.Exceptions;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
@@ -33,12 +34,15 @@ namespace TeachTether.Application.Services
 
         public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            var att = await _unitOfWork.StudentAttendances.GetByIdAsync(id)
+                ?? throw new NotFoundException("Attendance Record not found");
+            _unitOfWork.StudentAttendances.Delete(att);
+            await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<StudentAttendanceResponse>> GetAllByStudentAsync(int studentId)
+        public async Task<IEnumerable<StudentAttendanceResponse>> GetAllByStudentAsync(int studentId, int subjectId)
         {
-            var studentAttendances = await _unitOfWork.StudentAttendances.GetByStudentIdAsync(studentId);
+            var studentAttendances = await _unitOfWork.StudentAttendances.GetAllAsync(sg => sg.StudentId == studentId && sg.SubjectId == subjectId);
             return _mapper.Map<IEnumerable<StudentAttendanceResponse>>(studentAttendances);
         }
 

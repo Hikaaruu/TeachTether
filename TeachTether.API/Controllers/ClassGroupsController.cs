@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
@@ -15,13 +16,15 @@ namespace TeachTether.API.Controllers
         private readonly ISchoolService _schoolService;
         private readonly IAuthorizationService _authorizationService;
         private readonly ITeacherService _teacherService;
+        private readonly IStudentService _studentService;
 
-        public ClassGroupsController(IClassGroupService classGroupService, ISchoolService schoolService, IAuthorizationService authorizationService, ITeacherService teacherService)
+        public ClassGroupsController(IClassGroupService classGroupService, ISchoolService schoolService, IAuthorizationService authorizationService, ITeacherService teacherService, IStudentService studentService)
         {
             _classGroupService = classGroupService;
             _authorizationService = authorizationService;
             _schoolService = schoolService;
             _teacherService = teacherService;
+            _studentService = studentService;
         }
 
         [HttpGet]
@@ -39,6 +42,49 @@ namespace TeachTether.API.Controllers
             return Ok(classGroups);
 
         }
+
+        [HttpGet("/api/teachers/me/classgroups")]
+        [Authorize(Policy = "RequireTeacher")]
+        public async Task<ActionResult<IEnumerable<ClassGroupResponse>>> GetAvailableForTeacher(int schoolId)
+        {
+            var teacherIdStr = User.FindFirstValue("entity_id");
+            if (string.IsNullOrWhiteSpace(teacherIdStr) || !int.TryParse(teacherIdStr, out int teacherId))
+                return Forbid();
+
+            var classGroups = await _classGroupService.GetAvailableForTeacherAsync(teacherId);
+
+            return Ok(classGroups);
+
+        }
+
+        [HttpGet("/api/teachers/me/homeroom-classgroups")]
+        [Authorize(Policy = "RequireTeacher")]
+        public async Task<ActionResult<IEnumerable<ClassGroupResponse>>> GetAllByTeacher()
+        {
+            var teacherIdStr = User.FindFirstValue("entity_id");
+            if (string.IsNullOrWhiteSpace(teacherIdStr) || !int.TryParse(teacherIdStr, out int teacherId))
+                return Forbid();
+
+            var classGroups = await _classGroupService.GetAllByTeacherAsync(teacherId);
+
+            return Ok(classGroups);
+        }
+
+        //add auth
+        [HttpGet("/api/schools/{schoolId}/students/{studentId}/classgroup")]
+        public async Task<ActionResult<ClassGroupResponse>> GetByStudent(int schoolId, int studentId)
+        {
+            var school = await _schoolService.GetByIdAsync(schoolId);
+            var student = await _studentService.GetByIdAsync(studentId);
+            if (student.SchoolId != schoolId)
+                return NotFound();
+
+            var classGroup = await _classGroupService.GetByStudentAsync(studentId);
+
+            return Ok(classGroup);
+        }
+
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ClassGroupResponse>> Get(int id, int schoolId)

@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
 namespace TeachTether.API.Controllers
 {
-    [Route("api/schools/{schoolId}/classgroups/{classGroupId}/subjects{subjectId}/[controller]")]
+    [Route("api/schools/{schoolId}/classgroups/{classGroupId}/subjects/{subjectId}/[controller]")]
     [ApiController]
     [Authorize]
     public class ClassAssignmentsController : ControllerBase
@@ -94,6 +95,23 @@ namespace TeachTether.API.Controllers
 
             return Ok(teachers);
         }
+
+        [HttpGet("/api/schools/{schoolId}/teachers/{teacherId}/ClassAssignments")]
+        [Authorize(Policy = "RequireTeacher")]
+        public async Task<ActionResult<IEnumerable<ClassAssignmentResponse>>> GetForTeacher(int schoolId, int teacherId)
+        {
+            var school = await _schoolService.GetByIdAsync(schoolId);
+            var teacher = await _teacherService.GetByIdAsync(teacherId);
+            if (teacher.SchoolId != school.Id)
+                return NotFound();
+
+            if (teacherId.ToString() != User.FindFirstValue("entity_id"))
+                return Forbid();
+
+            var assignments = await _classAssignmentService.GetByTeacherAsync(teacherId);
+            return Ok(assignments);
+        }
+
 
     }
 }

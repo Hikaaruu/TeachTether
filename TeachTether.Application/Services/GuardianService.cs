@@ -4,6 +4,7 @@ using TeachTether.Application.Common.Models;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
+using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Services
@@ -13,12 +14,14 @@ namespace TeachTether.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserService _userService;
         private readonly IMapper _mapper;
+        private readonly IGuardianDeletionHelper _guardianDeletionHelper;
 
-        public GuardianService(IUnitOfWork unitOfWork, IUserService userService, IMapper mapper)
+        public GuardianService(IUnitOfWork unitOfWork, IUserService userService, IMapper mapper, IGuardianDeletionHelper guardianDeletionHelper)
         {
             _unitOfWork = unitOfWork;
             _userService = userService;
             _mapper = mapper;
+            _guardianDeletionHelper = guardianDeletionHelper;
         }
 
         public async Task<CreatedGuardianResponse> CreateAsync(CreateGuardianRequest request, int schoolId)
@@ -46,9 +49,9 @@ namespace TeachTether.Application.Services
             };
         }
 
-        public Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            await _guardianDeletionHelper.DeleteGuardianAsync(id);
         }
 
         public async Task<IEnumerable<GuardianResponse>> GetAllBySchoolAsync(int schoolId)
@@ -116,6 +119,68 @@ namespace TeachTether.Application.Services
 
             return result;
         }
+
+        public async Task<IEnumerable<GuardianResponse>> GetAvailableForTeacherAsync(int teacherId)
+        {
+            // Get class groups where the teacher is homeroom teacher
+            var homeClassGroupIds = (await _unitOfWork.ClassGroups
+                .GetByHomeroomTeacherIdAsync(teacherId))
+                .Select(cg => cg.Id);
+
+            // Get class group subject IDs where the teacher is assigned
+            var classGroupSubjectIds = (await _unitOfWork.ClassAssignments
+                .GetByTeacherIdAsync(teacherId))
+                .Select(ca => ca.ClassGroupSubjectId);
+
+            // Get class group IDs from these classGroupSubjectIds
+            var subjectClassGroupIds = (await _unitOfWork.ClassGroupsSubjects
+                .GetByIdsAsync(classGroupSubjectIds))
+                .Select(cgs => cgs.ClassGroupId);
+
+            // Combine class group IDs
+            var allClassGroupIds = homeClassGroupIds.Union(subjectClassGroupIds).Distinct();
+
+            // Get student IDs from those class groups
+            var studentIds = (await _unitOfWork.ClassGroupStudents
+                .GetAllAsync(cgs => allClassGroupIds.Contains(cgs.ClassGroupId)))
+                .Select(cgs => cgs.StudentId)
+                .Distinct();
+
+            // Get guardian IDs for those students
+            var guardianIds = (await _unitOfWork.GuardianStudents
+                .GetAllAsync(gs => studentIds.Contains(gs.StudentId)))
+                .Select(gs => gs.GuardianId)
+                .Distinct();
+
+            var guardians = await _unitOfWork.Guardians.GetByIdsAsync(guardianIds);
+
+            var userIds = guardians.Select(s => s.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var result = new List<GuardianResponse>();
+
+            foreach (var guardian in guardians)
+            {
+                if (!userMap.TryGetValue(guardian.UserId, out var user))
+                    throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
+
+                var response = new GuardianResponse
+                {
+                    User = _mapper.Map<UserDto>(user),
+                    Id = guardian.Id,
+                    SchoolId = guardian.SchoolId,
+                    DateOfBirth = guardian.DateOfBirth
+                };
+
+                result.Add(response);
+            }
+
+            return result;
+        }
+
 
         public async Task<GuardianResponse> GetByIdAsync(int id)
         {

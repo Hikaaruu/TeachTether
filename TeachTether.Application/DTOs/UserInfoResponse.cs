@@ -11,5 +11,6 @@
         public required string Sex { get; set; }
         public required string Role { get; set; }
         public int EntityId { get; set; }
+        public int? SchoolId { get; set; }
     }
 }

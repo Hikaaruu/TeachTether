@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
@@ -33,6 +34,19 @@ namespace TeachTether.API.Controllers
                 return Forbid();
 
             var guardians = await _guardianService.GetAllBySchoolAsync(schoolId);
+
+            return Ok(guardians);
+        }
+
+        [HttpGet("/api/teachers/me/guardians")]
+        [Authorize(Policy = "RequireTeacher")]
+        public async Task<ActionResult<IEnumerable<GuardianResponse>>> GetAvailableForTeacher()
+        {
+            var teacherIdStr = User.FindFirstValue("entity_id");
+            if (string.IsNullOrWhiteSpace(teacherIdStr) || !int.TryParse(teacherIdStr, out int teacherId))
+                return Forbid();
+
+            var guardians = await _guardianService.GetAvailableForTeacherAsync(teacherId);
 
             return Ok(guardians);
         }

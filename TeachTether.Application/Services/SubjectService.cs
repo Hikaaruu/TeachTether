@@ -3,6 +3,7 @@ using TeachTether.Application.Common.Exceptions;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
+using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
 namespace TeachTether.Application.Services
@@ -11,11 +12,13 @@ namespace TeachTether.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ISubjectDeletionHelper _subjectDeletionHelper;
 
-        public SubjectService(IUnitOfWork unitOfWork, IMapper mapper)
+        public SubjectService(IUnitOfWork unitOfWork, IMapper mapper, ISubjectDeletionHelper subjectDeletionHelper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _subjectDeletionHelper = subjectDeletionHelper;
         }
 
         public async Task<SubjectResponse> CreateAsync(CreateSubjectRequest request, int schoolId)
@@ -38,7 +41,7 @@ namespace TeachTether.Application.Services
 
         public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            await _subjectDeletionHelper.DeleteSubjectAsync(id);
         }
 
         public async Task<IEnumerable<SubjectResponse>> GetAllByClassGroupAsync(int classGroupId)
