@@ -51,6 +51,8 @@ namespace TeachTether.API.Controllers
             if (string.IsNullOrWhiteSpace(teacherIdStr) || !int.TryParse(teacherIdStr, out int teacherId))
                 return Forbid();
 
+            var teacher = await _teacherService.GetByIdAsync(teacherId);
+
             var classGroups = await _classGroupService.GetAvailableForTeacherAsync(teacherId);
 
             return Ok(classGroups);
@@ -65,12 +67,13 @@ namespace TeachTether.API.Controllers
             if (string.IsNullOrWhiteSpace(teacherIdStr) || !int.TryParse(teacherIdStr, out int teacherId))
                 return Forbid();
 
+            var teacher = await _teacherService.GetByIdAsync(teacherId);
+
             var classGroups = await _classGroupService.GetAllByTeacherAsync(teacherId);
 
             return Ok(classGroups);
         }
 
-        //add auth
         [HttpGet("/api/schools/{schoolId}/students/{studentId}/classgroup")]
         public async Task<ActionResult<ClassGroupResponse>> GetByStudent(int schoolId, int studentId)
         {
@@ -78,6 +81,11 @@ namespace TeachTether.API.Controllers
             var student = await _studentService.GetByIdAsync(studentId);
             if (student.SchoolId != schoolId)
                 return NotFound();
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, studentId, new CanViewStudentRequirement());
+
+            if (!authResult.Succeeded)
+                return Forbid();
 
             var classGroup = await _classGroupService.GetByStudentAsync(studentId);
 

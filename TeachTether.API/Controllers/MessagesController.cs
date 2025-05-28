@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using TeachTether.API.Hubs;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
@@ -15,29 +17,38 @@ namespace TeachTether.API.Controllers
         private readonly IAuthorizationService _authorizationService;
         private readonly IMessageThreadService _messageThreadService;
         private readonly IMessageService _messageService;
-        private readonly ITeacherService _teacherService;
-        private readonly IGuardianService _guardianService;
+        private readonly IHubContext<ChatHub> _hub;
 
-        public MessagesController(IAuthorizationService authorizationService, IMessageThreadService messageThreadService, ITeacherService teacherService, IGuardianService guardianService, IMessageService messageService)
+        public MessagesController(IAuthorizationService authorizationService, IMessageThreadService messageThreadService, IMessageService messageService, IHubContext<ChatHub> hub)
         {
             _authorizationService = authorizationService;
             _messageThreadService = messageThreadService;
-            _teacherService = teacherService;
-            _guardianService = guardianService;
             _messageService = messageService;
+            _hub = hub;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MessageResponse>>> GetAll(int threadId)
+        public async Task<ActionResult<IEnumerable<MessageResponse>>> GetAll(
+            int threadId,
+            [FromQuery] int take = 50,
+            [FromQuery] int? beforeId = null)
         {
 
             var thread = await _messageThreadService.GetByIdAsync(threadId);
+            if (beforeId.HasValue)
+            {
+                var message = await _messageService.GetByIdAsync(beforeId.Value);
+                if (message is null || message.ThreadId != threadId)
+                {
+                    return BadRequest();
+                }
+            }
 
             var authResult = await _authorizationService.AuthorizeAsync(User, threadId, new CanViewThreadRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
 
-            var messages = await _messageService.GetAllAsync(threadId);
+            var messages = await _messageService.GetByThreadAsync(threadId, take, beforeId);
             return Ok(messages);
         }
 
@@ -45,12 +56,13 @@ namespace TeachTether.API.Controllers
         public async Task<ActionResult<MessageResponse>> Get(int threadId, int id)
         {
             var thread = await _messageThreadService.GetByIdAsync(threadId);
+            var message = await _messageService.GetByIdAsync(id);
+            if (message.ThreadId != threadId)
+                return Forbid();
 
             var authResult = await _authorizationService.AuthorizeAsync(User, threadId, new CanViewThreadRequirement());
             if (!authResult.Succeeded)
                 return Forbid();
-
-            var message = await _messageService.GetByIdAsync(id);
 
             return Ok(message);
         }
@@ -68,6 +80,11 @@ namespace TeachTether.API.Controllers
             var message = await _messageService
                 .CreateAsync(request, threadId, User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+            await _hub.Clients
+              .Group($"thread-{threadId}")
+              .SendAsync("ReceiveMessage", message);
+
+
             return CreatedAtAction(nameof(Get), new { id = message.Id, threadId }, message);
         }
 
@@ -82,6 +99,11 @@ namespace TeachTether.API.Controllers
                 return Forbid();
 
             await _messageService.ReadAsync(id);
+
+            await _hub.Clients
+                .Group($"thread-{threadId}")
+                .SendAsync("MessageRead", id);       
+            
             return NoContent();
         }
 
@@ -95,6 +117,7 @@ namespace TeachTether.API.Controllers
                 return Forbid();
 
             await _messageService.DeleteAsync(id);
+            await _hub.Clients.Group($"thread-{threadId}").SendAsync("MessageDeleted", id);
             return NoContent();
         }
 

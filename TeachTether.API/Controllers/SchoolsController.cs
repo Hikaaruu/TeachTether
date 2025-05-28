@@ -14,11 +14,13 @@ namespace TeachTether.API.Controllers
     {
         private readonly ISchoolService _schoolService;
         private readonly IAuthorizationService _authorizationService;
+        private readonly IOwnerService _ownerService;
 
-        public SchoolsController(ISchoolService schoolService, IAuthorizationService authorizationService)
+        public SchoolsController(ISchoolService schoolService, IAuthorizationService authorizationService, IOwnerService ownerService)
         {
             _schoolService = schoolService;
             _authorizationService = authorizationService;
+            _ownerService = ownerService;
         }
 
         [HttpGet("{id}")]
@@ -38,6 +40,9 @@ namespace TeachTether.API.Controllers
         public async Task<ActionResult<IEnumerable<SchoolResponse>>> GetAll()
         {
             var schoolOwnerId = int.Parse(User.FindFirstValue("entity_id")!);
+            if (!await _ownerService.ExistsAsync(schoolOwnerId))
+                return Forbid();
+
             var schools = await _schoolService.GetAllByOwnerAsync(schoolOwnerId);
             return Ok(schools);
         }
@@ -47,6 +52,8 @@ namespace TeachTether.API.Controllers
         public async Task<ActionResult<SchoolResponse>> Create([FromBody] CreateSchoolRequest request)
         {
             var schoolOwnerId = int.Parse(User.FindFirstValue("entity_id")!);
+            if (!await _ownerService.ExistsAsync(schoolOwnerId))
+                return Forbid();
             var school = await _schoolService.CreateAsync(request, schoolOwnerId);
             return CreatedAtAction(nameof(Get), new { id = school.Id }, school);
         }

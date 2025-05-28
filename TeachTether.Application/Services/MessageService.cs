@@ -78,6 +78,18 @@ namespace TeachTether.Application.Services
             return response;
         }
 
+        public async Task<IEnumerable<MessageResponse>> GetByThreadAsync(int threadId, int take, int? beforeId)
+        {
+            var messages = await _unitOfWork.Messages.GetByThreadIdAsync(threadId, take, beforeId);
+            var response = _mapper.Map<IEnumerable<MessageResponse>>(messages);
+            foreach (var item in response)
+            {
+                var attachments = await _unitOfWork.MessageAttachments.GetAllAsync(ma => ma.MessageId == item.Id);
+                item.Attachments = _mapper.Map<List<MessageAttachmentResponse>>(attachments);
+            }
+            return response;
+        }
+
         public async Task ReadAsync(int id)
         {
             var message = await _unitOfWork.Messages.GetByIdAsync(id)

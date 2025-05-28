@@ -171,6 +171,47 @@ namespace TeachTether.Application.Services
             };
         }
 
+        public async Task<IEnumerable<StudentResponse>> GetWithoutClassGroupAsync(int schoolId)
+        {
+            var allStudents = await _unitOfWork.Students.GetBySchoolIdAsync(schoolId);
+            var studentIds = allStudents.Select(s => s.Id);
+
+            var classGroupStudentMappings = await _unitOfWork.ClassGroupStudents
+                .GetAllAsync(cgs => studentIds.Contains(cgs.StudentId));
+
+            var assignedStudentIds = classGroupStudentMappings.Select(cgs => cgs.StudentId);
+
+            var students = allStudents
+                .Where(s => !assignedStudentIds.Contains(s.Id));
+
+            var userIds = students.Select(s => s.UserId);
+            var users = await _userService.GetByIdsAsync(userIds);
+            var userMap = users
+                .Where(u => u.Id != null)
+                .ToDictionary(u => u.Id!);
+
+            var result = new List<StudentResponse>();
+
+            foreach (var student in students)
+            {
+                if (!userMap.TryGetValue(student.UserId, out var user))
+                    throw new Exception($"User data can not be found for student with id = {student.Id}");
+
+                var response = new StudentResponse
+                {
+                    User = _mapper.Map<UserDto>(user),
+                    Id = student.Id,
+                    SchoolId = student.SchoolId,
+                    DateOfBirth = student.DateOfBirth
+                };
+
+                result.Add(response);
+            }
+
+            return result;
+
+        }
+
         public async Task UpdateAsync(int id, UpdateStudentRequest request)
         {
             var student = await _unitOfWork.Students.GetByIdAsync(id)

@@ -15,12 +15,14 @@ namespace TeachTether.API.Controllers
         private readonly ITeacherService _teacherService;
         private readonly ISchoolService _schoolService;
         private readonly IAuthorizationService _authorizationService;
+        private readonly IGuardianService _guardianService;
 
-        public TeachersController(ITeacherService teacherService, ISchoolService schoolService, IAuthorizationService authorizationService)
+        public TeachersController(ITeacherService teacherService, ISchoolService schoolService, IAuthorizationService authorizationService, IGuardianService guardianService)
         {
             _teacherService = teacherService;
             _schoolService = schoolService;
             _authorizationService = authorizationService;
+            _guardianService = guardianService;
         }
 
         [HttpGet]
@@ -46,6 +48,8 @@ namespace TeachTether.API.Controllers
             var guardianIdStr = User.FindFirstValue("entity_id");
             if (string.IsNullOrWhiteSpace(guardianIdStr) || !int.TryParse(guardianIdStr, out int guardianId))
                 return Forbid();
+
+            var guardian = await _guardianService.GetByIdAsync(guardianId);
 
             var teachers = await _teacherService.GetAvailableForGuardianAsync(guardianId);
 

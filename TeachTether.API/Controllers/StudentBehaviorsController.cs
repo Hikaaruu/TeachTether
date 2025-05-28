@@ -4,7 +4,6 @@ using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
-using TeachTether.Application.Services;
 
 namespace TeachTether.API.Controllers
 {

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
@@ -44,8 +43,13 @@ namespace TeachTether.API.Controllers
         {
             var school = await _schoolService.GetByIdAsync(schoolId);
 
+            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId , new CanManageSchoolEntitiesRequirement());
+            if (!authResult.Succeeded)
+                return Forbid();
+
             var announcements = await _announcementService
                 .GetAllBySchoolId(schoolId);
+
             return Ok(announcements);
         }
 

@@ -7,6 +7,7 @@ namespace TeachTether.Application.Interfaces.Services
         Task<StudentResponse> GetByIdAsync(int id);
         Task<IEnumerable<StudentResponse>> GetAllByClassGroupAsync(int classGroupId);
         Task<IEnumerable<StudentResponse>> GetAllBySchoolAsync(int schoolId);
+        Task<IEnumerable<StudentResponse>> GetWithoutClassGroupAsync(int schoolId);
         Task<IEnumerable<StudentResponse>> GetAllByGuardianAsync(int guardianId);
         Task<CreatedStudentResponse> CreateAsync(CreateStudentRequest request, int schoolId);
         Task UpdateAsync(int id, UpdateStudentRequest request);

@@ -23,7 +23,7 @@ namespace TeachTether.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+        [Authorize("RequireSchoolOwnerOrAdmin")]
         public async Task<ActionResult<IEnumerable<StudentResponse>>> GetAllBySchool(int schoolId)
         {
             var _ = await _schoolService.GetByIdAsync(schoolId);
@@ -54,7 +54,7 @@ namespace TeachTether.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+        [Authorize("RequireSchoolOwnerOrAdmin")]
         public async Task<ActionResult<CreatedStudentResponse>> Create(int schoolId, [FromBody] CreateStudentRequest request)
         {
             var _ = await _schoolService.GetByIdAsync(schoolId);
@@ -68,7 +68,7 @@ namespace TeachTether.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+        [Authorize("RequireSchoolOwnerOrAdmin")]
         public async Task<IActionResult> Update(int schoolId, int id, [FromBody] UpdateStudentRequest request)
         {
             var student = await _studentService.GetByIdAsync(id);
@@ -84,7 +84,7 @@ namespace TeachTether.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+        [Authorize("RequireSchoolOwnerOrAdmin")]
         public async Task<IActionResult> Delete(int schoolId, int id)
         {
             var student = await _studentService.GetByIdAsync(id);
@@ -97,6 +97,20 @@ namespace TeachTether.API.Controllers
 
             await _studentService.DeleteAsync(id);
             return NoContent();
+        }
+
+        [HttpGet("without-class-group")]
+        [Authorize("RequireSchoolOwnerOrAdmin")]
+        public async Task<ActionResult<IEnumerable<StudentResponse>>> GetStudentsWithoutClassGroup(int schoolId)
+        {
+            var _ = await _schoolService.GetByIdAsync(schoolId);
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+            if (!authResult.Succeeded)
+                return Forbid();
+
+            var students = await _studentService.GetWithoutClassGroupAsync(schoolId);
+            return Ok(students);
         }
 
     }

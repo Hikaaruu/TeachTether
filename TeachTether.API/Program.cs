@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using TeachTether.API.Errors;
+using TeachTether.API.Hubs;
 using TeachTether.API.Middleware;
 using TeachTether.Application.Authorization.Handlers;
 using TeachTether.Application.Common.Interfaces;
@@ -119,6 +120,8 @@ namespace TeachTether.API
                     )
                 );
 
+            builder.Services.AddSignalR();
+
             builder.Services.AddAutoMapper(typeof(UserMappingProfile));
 
             builder.Services.AddScoped<IAuthorizationHandler, CanCreateAnnouncementHandler>();
@@ -197,6 +200,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<IStudentAttendanceService, StudentAttendanceService>();
             builder.Services.AddScoped<IStudentGradeService, StudentGradeService>();
             builder.Services.AddScoped<IStudentBehaviorService, StudentBehaviorService>();
+            builder.Services.AddScoped<IOwnerService, OwnerService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
             builder.Services.AddScoped<IAnnouncementDeletionHelper, AnnouncementDeletionHelper>();
@@ -217,6 +221,8 @@ namespace TeachTether.API
 
 
             var app = builder.Build();
+
+            app.MapHub<ChatHub>("/hubs/chat");
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 

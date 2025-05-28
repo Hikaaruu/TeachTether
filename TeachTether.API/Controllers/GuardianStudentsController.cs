@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
-using TeachTether.Application.Services;
-using TeachTether.Domain.Entities;
 
 namespace TeachTether.API.Controllers
 {

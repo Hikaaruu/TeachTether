@@ -29,7 +29,6 @@ namespace TeachTether.API.Controllers
             _classGroupService = classGroupService;
         }
 
-        // ADD AUTH HERE
         [HttpGet("classgroups/{classGroupId}/subjects/{subjectId}/students/{studentId}/averages")]
         public async Task<ActionResult<ClassAveragesResponse>> Get(int schoolId, int classGroupId, int subjectId, int studentId)
         {
@@ -41,6 +40,10 @@ namespace TeachTether.API.Controllers
                 subject.SchoolId != schoolId ||
                 classGroup.SchoolId != schoolId)
                 return NotFound();
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, subjectId), new CanViewRecordsOfStudentRequirement());
+            if (!authResult.Succeeded)
+                return Forbid();
 
             var averages = await _analyticsService.GetClassAverages(subjectId, studentId, classGroupId);
 

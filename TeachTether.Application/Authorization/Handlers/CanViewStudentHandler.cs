@@ -49,18 +49,13 @@ namespace TeachTether.Application.Authorization.Handlers
                     {
                         var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId);
                         if (teacher == null)
-                        {
-                            canView = false;
-                            break;
-                        }
+                            return;
 
                         var classGroupStudent = await _unitOfWork.ClassGroupStudents.GetByStudentIdAsync(student.Id);
-
                         if (classGroupStudent == null)
                             return;
 
                         var classGroup = await _unitOfWork.ClassGroups.GetByIdAsync(classGroupStudent.ClassGroupId);
-
                         if (classGroup == null)
                             return;
 
