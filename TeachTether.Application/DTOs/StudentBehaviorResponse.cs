@@ -9,5 +9,7 @@
         public decimal BehaviorScore { get; set; }
         public string? Comment { get; set; }
         public DateOnly BehaviorDate { get; set; }
+
+        public required string TeacherName { get; set; }
     }
 }

@@ -9,5 +9,7 @@
         public DateOnly AttendanceDate { get; set; }
         public required string Status { get; set; }
         public string? Comment { get; set; }
+
+        public required string TeacherName { get; set; }
     }
 }

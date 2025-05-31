@@ -10,5 +10,7 @@
         public required string GradeType { get; set; }
         public string? Comment { get; set; }
         public DateOnly GradeDate { get; set; }
+
+        public required string TeacherName { get; set; }
     }
 }

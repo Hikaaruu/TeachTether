@@ -202,6 +202,7 @@ namespace TeachTether.API
             builder.Services.AddScoped<IStudentBehaviorService, StudentBehaviorService>();
             builder.Services.AddScoped<IOwnerService, OwnerService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+            builder.Services.AddScoped<IStudentRecordsService, StudentRecordsService>();
 
             builder.Services.AddScoped<IAnnouncementDeletionHelper, AnnouncementDeletionHelper>();
             builder.Services.AddScoped<IClassGroupDeletionHelper, ClassGroupDeletionHelper>();
