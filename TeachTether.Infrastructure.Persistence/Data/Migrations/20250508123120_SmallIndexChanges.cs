@@ -25,13 +25,13 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Subjects_SchoolId_Name",
                 table: "Subjects",
-                columns: new[] { "SchoolId", "Name" },
+                columns: ["SchoolId", "Name"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schools_SchoolOwnerId_Name",
                 table: "Schools",
-                columns: new[] { "SchoolOwnerId", "Name" },
+                columns: ["SchoolOwnerId", "Name"],
                 unique: true);
         }
 

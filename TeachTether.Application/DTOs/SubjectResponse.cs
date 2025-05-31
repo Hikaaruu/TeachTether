@@ -1,9 +1,8 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class SubjectResponse
 {
-    public class SubjectResponse
-    {
-        public int Id { get; set; }
-        public required string Name { get; set; }
-        public int SchoolId { get; set; }
-    }
+    public int Id { get; set; }
+    public required string Name { get; set; }
+    public int SchoolId { get; set; }
 }

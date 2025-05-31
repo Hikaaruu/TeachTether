@@ -3,51 +3,44 @@ using Microsoft.AspNetCore.Mvc;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
-namespace TeachTether.API.Controllers
+namespace TeachTether.API.Controllers;
+
+[Route("api/[controller]/[action]")]
+[ApiController]
+public class AuthController(IAuthService authService) : ControllerBase
 {
-    [Route("api/[controller]/[action]")]
-    [ApiController]
-    public class AuthController : ControllerBase
+    private readonly IAuthService _authService = authService;
+
+    [HttpPost]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        private readonly IAuthService _authService;
+        var (result, token) = await _authService.RegisterAsync(request);
 
-        public AuthController(IAuthService authService)
-        {
-            _authService = authService;
-        }
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
 
-        [HttpPost]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-        {
-            var (result, token) = await _authService.RegisterAsync(request);
+        return Ok(new { Token = token });
+    }
 
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+    [HttpPost]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var token = await _authService.LoginAsync(request);
 
-            return Ok(new { Token = token });
-        }
+        if (token == null)
+            return Unauthorized();
 
-        [HttpPost]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
-        {
-            var token = await _authService.LoginAsync(request);
+        return Ok(new { Token = token });
+    }
 
-            if (token == null)
-                return Unauthorized();
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Me()
+    {
+        var userInfo = await _authService.GetCurrentUserInfoAsync(User);
+        if (userInfo == null)
+            return Unauthorized();
 
-            return Ok(new { Token = token });
-        }
-
-        [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> Me()
-        {
-            var userInfo = await _authService.GetCurrentUserInfoAsync(User);
-            if (userInfo == null)
-                return Unauthorized();
-
-            return Ok(userInfo);
-        }
-
+        return Ok(userInfo);
     }
 }

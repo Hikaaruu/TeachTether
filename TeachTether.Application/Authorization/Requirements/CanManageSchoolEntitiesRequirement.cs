@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 
-namespace TeachTether.Application.Authorization.Requirements
+namespace TeachTether.Application.Authorization.Requirements;
+
+public class CanManageSchoolEntitiesRequirement : IAuthorizationRequirement
 {
-    public class CanManageSchoolEntitiesRequirement : IAuthorizationRequirement
-    {
-    }
 }

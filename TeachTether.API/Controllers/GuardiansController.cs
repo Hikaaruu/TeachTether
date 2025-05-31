@@ -1,119 +1,118 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
-namespace TeachTether.API.Controllers
+namespace TeachTether.API.Controllers;
+
+[Route("api/schools/{schoolId}/[controller]")]
+[ApiController]
+[Authorize]
+public class GuardiansController(
+    IGuardianService guardianService,
+    ISchoolService schoolService,
+    IAuthorizationService authorizationService,
+    ITeacherService teacherService) : ControllerBase
 {
-    [Route("api/schools/{schoolId}/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class GuardiansController : ControllerBase
+    private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly IGuardianService _guardianService = guardianService;
+    private readonly ISchoolService _schoolService = schoolService;
+    private readonly ITeacherService _teacherService = teacherService;
+
+    [HttpGet]
+    [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+    public async Task<ActionResult<IEnumerable<GuardianResponse>>> GetAllBySchool(int schoolId)
     {
-        private readonly IGuardianService _guardianService;
-        private readonly ISchoolService _schoolService;
-        private readonly IAuthorizationService _authorizationService;
-        private readonly ITeacherService _teacherService;
+        var _ = await _schoolService.GetByIdAsync(schoolId);
 
-        public GuardiansController(IGuardianService guardianService, ISchoolService schoolService, IAuthorizationService authorizationService, ITeacherService teacherService)
-        {
-            _guardianService = guardianService;
-            _schoolService = schoolService;
-            _authorizationService = authorizationService;
-            _teacherService = teacherService;
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpGet]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<ActionResult<IEnumerable<GuardianResponse>>> GetAllBySchool(int schoolId)
-        {
-            var _ = await _schoolService.GetByIdAsync(schoolId);
+        var guardians = await _guardianService.GetAllBySchoolAsync(schoolId);
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        return Ok(guardians);
+    }
 
-            var guardians = await _guardianService.GetAllBySchoolAsync(schoolId);
+    [HttpGet("/api/teachers/me/guardians")]
+    [Authorize(Policy = "RequireTeacher")]
+    public async Task<ActionResult<IEnumerable<GuardianResponse>>> GetAvailableForTeacher()
+    {
+        var teacherIdStr = User.FindFirstValue("entity_id");
+        if (string.IsNullOrWhiteSpace(teacherIdStr) || !int.TryParse(teacherIdStr, out var teacherId))
+            return Forbid();
+        _ = await _teacherService.GetByIdAsync(teacherId);
 
-            return Ok(guardians);
-        }
+        var guardians = await _guardianService.GetAvailableForTeacherAsync(teacherId);
 
-        [HttpGet("/api/teachers/me/guardians")]
-        [Authorize(Policy = "RequireTeacher")]
-        public async Task<ActionResult<IEnumerable<GuardianResponse>>> GetAvailableForTeacher()
-        {
-            var teacherIdStr = User.FindFirstValue("entity_id");
-            if (string.IsNullOrWhiteSpace(teacherIdStr) || !int.TryParse(teacherIdStr, out int teacherId))
-                return Forbid();
+        return Ok(guardians);
+    }
 
-            var teacher = await _teacherService.GetByIdAsync(teacherId);
+    [HttpGet("{id}")]
+    public async Task<ActionResult<GuardianResponse>> Get(int id, int schoolId)
+    {
+        var guardian = await _guardianService.GetByIdAsync(id);
+        if (guardian.SchoolId != schoolId)
+            return NotFound();
 
-            var guardians = await _guardianService.GetAvailableForTeacherAsync(teacherId);
+        var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewGuardianRequirement());
 
-            return Ok(guardians);
-        }
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<GuardianResponse>> Get(int id, int schoolId)
-        {
-            var guardian = await _guardianService.GetByIdAsync(id);
-            if (guardian.SchoolId != schoolId)
-                return NotFound();
-            
-            var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewGuardianRequirement());
+        return Ok(guardian);
+    }
 
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpPost]
+    [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+    public async Task<ActionResult<CreatedGuardianResponse>> Create(int schoolId,
+        [FromBody] CreateGuardianRequest request)
+    {
+        var _ = await _schoolService.GetByIdAsync(schoolId);
 
-            return Ok(guardian);
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpPost]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<ActionResult<CreatedGuardianResponse>> Create(int schoolId, [FromBody] CreateGuardianRequest request)
-        {
-            var _ = await _schoolService.GetByIdAsync(schoolId);
+        var createdGuardian = await _guardianService.CreateAsync(request, schoolId);
+        return CreatedAtAction(nameof(Get), new { id = createdGuardian.Id, schoolId }, createdGuardian);
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpPut("{id}")]
+    [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+    public async Task<IActionResult> Update(int schoolId, int id, [FromBody] UpdateGuardianRequest request)
+    {
+        var guardian = await _guardianService.GetByIdAsync(id);
+        if (guardian.SchoolId != schoolId)
+            return NotFound();
 
-            var createdGuardian = await _guardianService.CreateAsync(request, schoolId);
-            return CreatedAtAction(nameof(Get), new { id = createdGuardian.Id, schoolId }, createdGuardian);
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpPut("{id}")]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<IActionResult> Update(int schoolId, int id, [FromBody] UpdateGuardianRequest request)
-        {
-            var guardian = await _guardianService.GetByIdAsync(id);
-            if (guardian.SchoolId != schoolId)
-                return NotFound();
+        await _guardianService.UpdateAsync(id, request);
+        return NoContent();
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpDelete("{id}")]
+    [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+    public async Task<IActionResult> Delete(int schoolId, int id)
+    {
+        var guardian = await _guardianService.GetByIdAsync(id);
+        if (guardian.SchoolId != schoolId)
+            return NotFound();
 
-            await _guardianService.UpdateAsync(id, request);
-            return NoContent();
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpDelete("{id}")]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<IActionResult> Delete(int schoolId, int id)
-        {
-            var guardian = await _guardianService.GetByIdAsync(id);
-            if (guardian.SchoolId != schoolId)
-                return NotFound();
-
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
-
-            await _guardianService.DeleteAsync(id);
-            return NoContent();
-        }
+        await _guardianService.DeleteAsync(id);
+        return NoContent();
     }
 }

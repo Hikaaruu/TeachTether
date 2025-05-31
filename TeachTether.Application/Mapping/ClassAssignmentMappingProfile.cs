@@ -2,13 +2,12 @@
 using TeachTether.Application.DTOs;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Mapping
+namespace TeachTether.Application.Mapping;
+
+public class ClassAssignmentMappingProfile : Profile
 {
-    public class ClassAssignmentMappingProfile : Profile
+    public ClassAssignmentMappingProfile()
     {
-        public ClassAssignmentMappingProfile()
-        {
-            CreateMap<CreateClassAssignmentRequest, ClassAssignment>();
-        }
+        CreateMap<CreateClassAssignmentRequest, ClassAssignment>();
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers
+﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers;
+
+public interface IClassGroupsSubjectDeletionHelper
 {
-    public interface IClassGroupsSubjectDeletionHelper
-    {
-        Task DeleteClassGroupsSubjectAsync(int id);
-    }
+    Task DeleteClassGroupsSubjectAsync(int id);
 }

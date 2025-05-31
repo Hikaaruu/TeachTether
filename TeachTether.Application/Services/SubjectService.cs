@@ -6,83 +6,72 @@ using TeachTether.Application.Interfaces.Services;
 using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Services
+namespace TeachTether.Application.Services;
+
+public class SubjectService(IUnitOfWork unitOfWork, IMapper mapper, ISubjectDeletionHelper subjectDeletionHelper)
+    : ISubjectService
 {
-    public class SubjectService : ISubjectService
+    private readonly IMapper _mapper = mapper;
+    private readonly ISubjectDeletionHelper _subjectDeletionHelper = subjectDeletionHelper;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    public async Task<SubjectResponse> CreateAsync(CreateSubjectRequest request, int schoolId)
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
-        private readonly ISubjectDeletionHelper _subjectDeletionHelper;
-
-        public SubjectService(IUnitOfWork unitOfWork, IMapper mapper, ISubjectDeletionHelper subjectDeletionHelper)
-        {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
-            _subjectDeletionHelper = subjectDeletionHelper;
-        }
-
-        public async Task<SubjectResponse> CreateAsync(CreateSubjectRequest request, int schoolId)
-        {
-            if (await _unitOfWork.Subjects.AnyAsync(s =>
+        if (await _unitOfWork.Subjects.AnyAsync(s =>
                 s.SchoolId == schoolId &&
                 s.Name == request.Name))
-            {
-                throw new BadRequestException($"Subject \"{request.Name}\" already exists in school {schoolId}.");
-            }
+            throw new BadRequestException($"Subject \"{request.Name}\" already exists in school {schoolId}.");
 
-            var subject = _mapper.Map<Subject>(request);
-            subject.SchoolId = schoolId;
+        var subject = _mapper.Map<Subject>(request);
+        subject.SchoolId = schoolId;
 
-            await _unitOfWork.Subjects.AddAsync(subject);
-            await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Subjects.AddAsync(subject);
+        await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<SubjectResponse>(subject);
-        }
+        return _mapper.Map<SubjectResponse>(subject);
+    }
 
-        public async Task DeleteAsync(int id)
-        {
-            await _subjectDeletionHelper.DeleteSubjectAsync(id);
-        }
+    public async Task DeleteAsync(int id)
+    {
+        await _subjectDeletionHelper.DeleteSubjectAsync(id);
+    }
 
-        public async Task<IEnumerable<SubjectResponse>> GetAllByClassGroupAsync(int classGroupId)
-        {
-            var subjectIds = (await _unitOfWork.ClassGroupsSubjects
+    public async Task<IEnumerable<SubjectResponse>> GetAllByClassGroupAsync(int classGroupId)
+    {
+        var subjectIds = (await _unitOfWork.ClassGroupsSubjects
                 .GetByClassGroupIdAsync(classGroupId))
-                .Select(cgs => cgs.SubjectId);
+            .Select(cgs => cgs.SubjectId);
 
-            var subjects = await _unitOfWork.Subjects.GetByIdsAsync(subjectIds);
-            return _mapper.Map<IEnumerable<SubjectResponse>>(subjects);
-        }
+        var subjects = await _unitOfWork.Subjects.GetByIdsAsync(subjectIds);
+        return _mapper.Map<IEnumerable<SubjectResponse>>(subjects);
+    }
 
-        public async Task<IEnumerable<SubjectResponse>> GetAllBySchoolAsync(int schoolId)
-        {
-            var subjects = await _unitOfWork.Subjects.GetBySchoolIdAsync(schoolId);
-            return _mapper.Map<IEnumerable<SubjectResponse>>(subjects);
-        }
+    public async Task<IEnumerable<SubjectResponse>> GetAllBySchoolAsync(int schoolId)
+    {
+        var subjects = await _unitOfWork.Subjects.GetBySchoolIdAsync(schoolId);
+        return _mapper.Map<IEnumerable<SubjectResponse>>(subjects);
+    }
 
-        public async Task<SubjectResponse> GetByIdAsync(int id)
-        {
-            var subject = await _unitOfWork.Subjects.GetByIdAsync(id)
-                ?? throw new NotFoundException("Subject not found");
+    public async Task<SubjectResponse> GetByIdAsync(int id)
+    {
+        var subject = await _unitOfWork.Subjects.GetByIdAsync(id)
+                      ?? throw new NotFoundException("Subject not found");
 
-            return _mapper.Map<SubjectResponse>(subject);
-        }
+        return _mapper.Map<SubjectResponse>(subject);
+    }
 
-        public async Task UpdateAsync(int id, UpdateSubjectRequest request)
-        {
-            var subject = await _unitOfWork.Subjects.GetByIdAsync(id)
-                ?? throw new NotFoundException("Subject not found");
+    public async Task UpdateAsync(int id, UpdateSubjectRequest request)
+    {
+        var subject = await _unitOfWork.Subjects.GetByIdAsync(id)
+                      ?? throw new NotFoundException("Subject not found");
 
-            if (await _unitOfWork.Subjects.AnyAsync(s =>
+        if (await _unitOfWork.Subjects.AnyAsync(s =>
                 s.SchoolId == subject.SchoolId &&
                 s.Name == request.Name))
-            {
-                throw new BadRequestException($"Subject \"{request.Name}\" already exists in school {subject.SchoolId}.");
-            }
+            throw new BadRequestException($"Subject \"{request.Name}\" already exists in school {subject.SchoolId}.");
 
-            _mapper.Map(request, subject);
-            _unitOfWork.Subjects.Update(subject);
-            await _unitOfWork.SaveChangesAsync();
-        }
+        _mapper.Map(request, subject);
+        _unitOfWork.Subjects.Update(subject);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

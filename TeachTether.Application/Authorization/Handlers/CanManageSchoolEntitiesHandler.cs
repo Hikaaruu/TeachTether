@@ -1,47 +1,38 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Authorization.Handlers
+namespace TeachTether.Application.Authorization.Handlers;
+
+public class CanManageSchoolEntitiesHandler(IUnitOfWork unitOfWork)
+    : AuthorizationHandler<CanManageSchoolEntitiesRequirement, int>
 {
-    public class CanManageSchoolEntitiesHandler : AuthorizationHandler<CanManageSchoolEntitiesRequirement, int>
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context,
+        CanManageSchoolEntitiesRequirement requirement, int schoolId)
     {
-        private readonly IUnitOfWork _unitOfWork;
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userType = context.User.FindFirstValue(ClaimTypes.Role);
 
-        public CanManageSchoolEntitiesHandler(IUnitOfWork unitOfWork)
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userType))
+            return;
+
+        if (userType == UserType.SchoolOwner.ToString())
         {
-            _unitOfWork = unitOfWork;
+            var schoolOwner = await _unitOfWork.SchoolOwners.GetByUserIdAsync(userId);
+            var school = await _unitOfWork.Schools.GetByIdAsync(schoolId);
+
+            if (school is not null && schoolOwner is not null && school.SchoolOwnerId == schoolOwner.Id)
+                context.Succeed(requirement);
         }
-
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanManageSchoolEntitiesRequirement requirement, int schoolId)
+        else if (userType == UserType.SchoolAdmin.ToString())
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userType = context.User.FindFirstValue(ClaimTypes.Role);
+            var schoolAdmin = await _unitOfWork.SchoolAdmins.GetByUserIdAsync(userId);
 
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userType))
-                return;
-
-            if (userType == UserType.SchoolOwner.ToString())
-            {
-                var schoolOwner = await _unitOfWork.SchoolOwners.GetByUserIdAsync(userId);
-                var school = await _unitOfWork.Schools.GetByIdAsync(schoolId);
-
-                if (school is not null && schoolOwner is not null && school.SchoolOwnerId == schoolOwner.Id)
-                {
-                    context.Succeed(requirement);
-                }
-            }
-            else if (userType == UserType.SchoolAdmin.ToString())
-            {
-                var schoolAdmin = await _unitOfWork.SchoolAdmins.GetByUserIdAsync(userId);
-
-                if (schoolAdmin is not null && schoolAdmin.SchoolId == schoolId)
-                {
-                    context.Succeed(requirement);
-                }
-            }
+            if (schoolAdmin is not null && schoolAdmin.SchoolId == schoolId) context.Succeed(requirement);
         }
     }
 }

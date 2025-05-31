@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.Interfaces.Services
+﻿namespace TeachTether.Application.Interfaces.Services;
+
+public interface IStudentRecordsService
 {
-    public interface IStudentRecordsService
-    {
-        Task DeleteForClassGroupSubject(int classGroupId, int subjectId);
-    }
+    Task DeleteForClassGroupSubject(int classGroupId, int subjectId);
 }

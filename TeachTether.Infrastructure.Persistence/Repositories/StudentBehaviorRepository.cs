@@ -3,26 +3,24 @@ using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 using TeachTether.Infrastructure.Persistence.Data;
 
-namespace TeachTether.Infrastructure.Persistence.Repositories
+namespace TeachTether.Infrastructure.Persistence.Repositories;
+
+public class StudentBehaviorRepository(ApplicationDbContext context)
+    : Repository<StudentBehavior>(context), IStudentBehaviorRepository
 {
-    public class StudentBehaviorRepository : Repository<StudentBehavior>, IStudentBehaviorRepository
+    public async Task<IEnumerable<StudentBehavior>> GetByStudentAndSubjectIdAsync(int studentId, int subjectId)
     {
-        public StudentBehaviorRepository(ApplicationDbContext context) : base(context) { }
+        return await _dbSet
+            .AsNoTracking()
+            .Where(sb => sb.StudentId == studentId && sb.SubjectId == subjectId)
+            .ToListAsync();
+    }
 
-        public async Task<IEnumerable<StudentBehavior>> GetByStudentAndSubjectIdAsync(int studentId, int subjectId)
-        {
-            return await _dbSet
-                .AsNoTracking()
-                .Where(sb => sb.StudentId == studentId && sb.SubjectId == subjectId)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<StudentBehavior>> GetByStudentIdAsync(int studentId)
-        {
-            return await _dbSet
-                .AsNoTracking()
-                .Where(sb => sb.StudentId == studentId)
-                .ToListAsync();
-        }
+    public async Task<IEnumerable<StudentBehavior>> GetByStudentIdAsync(int studentId)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Where(sb => sb.StudentId == studentId)
+            .ToListAsync();
     }
 }

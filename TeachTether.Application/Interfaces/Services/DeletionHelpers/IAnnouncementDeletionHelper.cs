@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers
+﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers;
+
+public interface IAnnouncementDeletionHelper
 {
-    public interface IAnnouncementDeletionHelper
-    {
-        Task DeleteAnnouncementAsync(int id);
-    }
+    Task DeleteAnnouncementAsync(int id);
 }

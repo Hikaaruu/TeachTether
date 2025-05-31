@@ -1,10 +1,9 @@
 ﻿using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Interfaces.Repositories
+namespace TeachTether.Application.Interfaces.Repositories;
+
+public interface ISubjectRepository : IRepository<Subject>
 {
-    public interface ISubjectRepository : IRepository<Subject>
-    {
-        Task<Subject?> GetByNameAsync(string name);
-        Task<IEnumerable<Subject>> GetBySchoolIdAsync(int schoolId);
-    }
+    Task<Subject?> GetByNameAsync(string name);
+    Task<IEnumerable<Subject>> GetBySchoolIdAsync(int schoolId);
 }

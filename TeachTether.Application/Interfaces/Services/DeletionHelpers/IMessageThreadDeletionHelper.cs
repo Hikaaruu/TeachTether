@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers
+﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers;
+
+public interface IMessageThreadDeletionHelper
 {
-    public interface IMessageThreadDeletionHelper
-    {
-        Task DeleteMessageThreadAsync(int id);
-    }
+    Task DeleteMessageThreadAsync(int id);
 }

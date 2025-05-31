@@ -1,74 +1,70 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Authorization.Handlers
+namespace TeachTether.Application.Authorization.Handlers;
+
+public class CanCreateMessageHandler(IUnitOfWork unitOfWork)
+    : AuthorizationHandler<CanCreateMessageRequirement, MessageThreadResponse>
 {
-    public class CanCreateMessageHandler : AuthorizationHandler<CanCreateMessageRequirement, MessageThreadResponse>
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context,
+        CanCreateMessageRequirement requirement, MessageThreadResponse thread)
     {
-        private readonly IUnitOfWork _unitOfWork;
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userType = context.User.FindFirstValue(ClaimTypes.Role);
 
-        public CanCreateMessageHandler(IUnitOfWork unitOfWork)
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userType))
+            return;
+
+        var type = Enum.Parse<UserType>(userType);
+
+        var teacher = await _unitOfWork.Teachers.GetByIdAsync(thread.TeacherId);
+        if (teacher == null)
+            return;
+
+        var guardian = await _unitOfWork.Guardians.GetByIdAsync(thread.GuardianId);
+
+        if (guardian == null)
+            return;
+
+        bool canCreate;
+
+        switch (type)
         {
-            _unitOfWork = unitOfWork;
-        }
+            case UserType.Guardian:
+            {
+                var currentGuardian = await _unitOfWork.Guardians.GetByUserIdAsync(userId);
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanCreateMessageRequirement requirement, MessageThreadResponse thread)
-        {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userType = context.User.FindFirstValue(ClaimTypes.Role);
+                if (currentGuardian == null)
+                    return;
 
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userType))
-                return;
+                canCreate = currentGuardian.Id == thread.GuardianId;
 
-            var type = Enum.Parse<UserType>(userType);
+                break;
+            }
+            case UserType.Teacher:
+            {
+                var currentTeacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId);
+                if (currentTeacher == null)
+                    return;
 
-            var teacher = await _unitOfWork.Teachers.GetByIdAsync(thread.TeacherId);
-            if (teacher == null)
-                return;
+                canCreate = thread.TeacherId == currentTeacher.Id;
 
-            var guardian = await _unitOfWork.Guardians.GetByIdAsync(thread.GuardianId);
-
-            if (guardian == null)
-                return;
-
-            bool canCreate;
-
-            switch (type)
-            {               
-                case UserType.Guardian:
-                    {
-                        var currentGuardian = await _unitOfWork.Guardians.GetByUserIdAsync(userId);
-
-                        if (currentGuardian == null)
-                            return;
-
-                        canCreate = currentGuardian.Id == thread.GuardianId;
-
-                        break;
-                    }
-                case UserType.Teacher:
-                    {
-                        var currentTeacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId);
-                        if (currentTeacher == null)
-                            return;
-
-                        canCreate = thread.TeacherId == currentTeacher.Id;
-
-                        break;
-                    }
-
-
-                default:
-                    canCreate = false;
-                    break;
+                break;
             }
 
-            if (canCreate)
-                context.Succeed(requirement);
+
+            default:
+                canCreate = false;
+                break;
         }
+
+        if (canCreate)
+            context.Succeed(requirement);
     }
 }

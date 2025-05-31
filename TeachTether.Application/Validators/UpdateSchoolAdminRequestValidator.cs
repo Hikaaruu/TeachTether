@@ -2,13 +2,12 @@
 using TeachTether.Application.Common.Models;
 using TeachTether.Application.DTOs;
 
-namespace TeachTether.Application.Validators
+namespace TeachTether.Application.Validators;
+
+public class UpdateSchoolAdminRequestValidator : AbstractValidator<UpdateSchoolAdminRequest>
 {
-    public class UpdateSchoolAdminRequestValidator : AbstractValidator<UpdateSchoolAdminRequest>
+    public UpdateSchoolAdminRequestValidator(IValidator<UpdateUserDto> userValidator)
     {
-        public UpdateSchoolAdminRequestValidator(IValidator<UpdateUserDto> userValidator)
-        {
-            RuleFor(x => x.User).SetValidator(userValidator);
-        }
+        RuleFor(x => x.User).SetValidator(userValidator);
     }
 }

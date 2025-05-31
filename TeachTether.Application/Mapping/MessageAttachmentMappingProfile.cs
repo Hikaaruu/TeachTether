@@ -2,13 +2,12 @@
 using TeachTether.Application.DTOs;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Mapping
+namespace TeachTether.Application.Mapping;
+
+public class MessageAttachmentMappingProfile : Profile
 {
-    public class MessageAttachmentMappingProfile : Profile
+    public MessageAttachmentMappingProfile()
     {
-        public MessageAttachmentMappingProfile()
-        {
-            CreateMap<MessageAttachment, MessageAttachmentResponse>();
-        }
+        CreateMap<MessageAttachment, MessageAttachmentResponse>();
     }
 }

@@ -1,9 +1,8 @@
 ﻿using TeachTether.Application.Common.Models;
 
-namespace TeachTether.Application.DTOs
+namespace TeachTether.Application.DTOs;
+
+public class CreateSchoolAdminRequest
 {
-    public class CreateSchoolAdminRequest
-    {
-        public required CreateUserDto User { get; set; }
-    }
+    public required CreateUserDto User { get; set; }
 }

@@ -8,89 +8,83 @@ using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Services
+namespace TeachTether.Application.Services;
+
+public class UserService(
+    ICredentialsGenerator credentialsGenerator,
+    IUserRepository userRepository,
+    IMapper mapper,
+    IJwtTokenGenerator jwtTokenGenerator) : IUserService
 {
-    public class UserService : IUserService
+    private readonly ICredentialsGenerator _credentialsGenerator = credentialsGenerator;
+    private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
+    private readonly IMapper _mapper = mapper;
+    private readonly IUserRepository _userRepository = userRepository;
+
+    public async Task<(OperationResult, User)> RegisterAsync(RegisterRequest request)
     {
-        private readonly ICredentialsGenerator _credentialsGenerator;
-        private readonly IUserRepository _userRepository;
-        private readonly IMapper _mapper;
-        private readonly IJwtTokenGenerator _jwtTokenGenerator;
+        var user = _mapper.Map<User>(request);
+        user.UserType = UserType.SchoolOwner;
 
-        public UserService(ICredentialsGenerator credentialsGenerator, IUserRepository userRepository, IMapper mapper, IJwtTokenGenerator jwtTokenGenerator)
+        return (await _userRepository.CreateAsync(user, request.Password), user);
+    }
+
+    public async Task<(User, string password)> CreateAsync(CreateUserDto createUserDto, UserType userType)
+    {
+        var user = _mapper.Map<User>(createUserDto);
+        user.UserType = userType;
+
+        do
         {
-            _credentialsGenerator = credentialsGenerator;
-            _userRepository = userRepository;
-            _mapper = mapper;
-            _jwtTokenGenerator = jwtTokenGenerator;
-        }
+            user.UserName = _credentialsGenerator
+                .GenerateUsername(user.FirstName, user.MiddleName, user.LastName);
+        } while (await _userRepository.FindByUserNameAsync(user.UserName) is not null);
 
-        public async Task<(OperationResult, User)> RegisterAsync(RegisterRequest request)
-        {
-            var user = _mapper.Map<User>(request);
-            user.UserType = UserType.SchoolOwner;
+        var password = _credentialsGenerator.GeneratePassword();
+        var result = await _userRepository.CreateAsync(user, password);
 
-            return (await _userRepository.CreateAsync(user, request.Password), user);
-        }
+        if (!result.Succeeded)
+            throw new Exception("Failed to create user");
 
-        public async Task<(User, string password)> CreateAsync(CreateUserDto createUserDto, UserType userType)
-        {
-            var user = _mapper.Map<User>(createUserDto);
-            user.UserType = userType;
+        return (user, password);
+    }
 
-            do
-            {
-                user.UserName = _credentialsGenerator
-                    .GenerateUsername(user.FirstName, user.MiddleName, user.LastName);
-            } while (await _userRepository.FindByUserNameAsync(user.UserName) is not null);
+    public async Task UpdateAsync(string userId, UpdateUserDto updateUserDto)
+    {
+        var user = await _userRepository.GetByIdAsync(userId)
+                   ?? throw new NotFoundException("User not found");
 
-            var password = _credentialsGenerator.GeneratePassword();
-            var result = await _userRepository.CreateAsync(user, password);
+        _mapper.Map(updateUserDto, user);
 
-            if (!result.Succeeded)
-                throw new Exception("Failed to create user");
+        var result = await _userRepository.UpdateAsync(user);
 
-            return (user, password);
-        }
+        if (!result.Succeeded)
+            throw new Exception("Failed to update user");
+    }
 
-        public async Task UpdateAsync(string userId, UpdateUserDto updateUserDto)
-        {
-            var user = await _userRepository.GetByIdAsync(userId)
-                ?? throw new NotFoundException("User not found");
+    public async Task<string?> TryLoginAsync(LoginRequest request)
+    {
+        var user = await _userRepository.FindByUserNameAsync(request.UserName);
+        if (user is null)
+            return null;
 
-            _mapper.Map(updateUserDto, user);
+        var isValid = await _userRepository.CheckPasswordAsync(user.Id!, request.Password);
+        if (!isValid)
+            return null;
 
-            var result = await _userRepository.UpdateAsync(user);
+        return await _jwtTokenGenerator.GenerateJwtTokenAsync(user);
+    }
 
-            if (!result.Succeeded)
-                throw new Exception("Failed to update user");
+    public async Task<User> GetByIdAsync(string id)
+    {
+        var user = await _userRepository.GetByIdAsync(id)
+                   ?? throw new NotFoundException("User not found");
 
-        }
+        return user;
+    }
 
-        public async Task<string?> TryLoginAsync(LoginRequest request)
-        {
-            var user = await _userRepository.FindByUserNameAsync(request.UserName);
-            if (user is null)
-                return null;
-
-            var isValid = await _userRepository.CheckPasswordAsync(user.Id!, request.Password);
-            if (!isValid)
-                return null;
-
-            return await _jwtTokenGenerator.GenerateJwtTokenAsync(user);
-        }
-
-        public async Task<User> GetByIdAsync(string id)
-        {
-            var user = await _userRepository.GetByIdAsync(id)
-                ?? throw new NotFoundException("User not found");
-
-            return user;
-        }
-
-        public async Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<string> ids)
-        {
-            return await _userRepository.GetByIdsAsync(ids.Distinct());
-        }
+    public async Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<string> ids)
+    {
+        return await _userRepository.GetByIdsAsync(ids.Distinct());
     }
 }

@@ -4,114 +4,113 @@ using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
-namespace TeachTether.API.Controllers
+namespace TeachTether.API.Controllers;
+
+[Route("api/schools/{schoolId}/[controller]")]
+[ApiController]
+[Authorize]
+public class StudentsController(
+    IStudentService studentService,
+    ISchoolService schoolService,
+    IAuthorizationService authorizationService) : ControllerBase
 {
-    [Route("api/schools/{schoolId}/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class StudentsController : ControllerBase
+    private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly ISchoolService _schoolService = schoolService;
+    private readonly IStudentService _studentService = studentService;
+
+    [HttpGet]
+    [Authorize("RequireSchoolOwnerOrAdmin")]
+    public async Task<ActionResult<IEnumerable<StudentResponse>>> GetAllBySchool(int schoolId)
     {
-        private readonly IStudentService _studentService;
-        private readonly ISchoolService _schoolService;
-        private readonly IAuthorizationService _authorizationService;
+        var _ = await _schoolService.GetByIdAsync(schoolId);
 
-        public StudentsController(IStudentService studentService, ISchoolService schoolService, IAuthorizationService authorizationService)
-        {
-            _studentService = studentService;
-            _authorizationService = authorizationService;
-            _schoolService = schoolService;
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpGet]
-        [Authorize("RequireSchoolOwnerOrAdmin")]
-        public async Task<ActionResult<IEnumerable<StudentResponse>>> GetAllBySchool(int schoolId)
-        {
-            var _ = await _schoolService.GetByIdAsync(schoolId);
+        var students = await _studentService.GetAllBySchoolAsync(schoolId);
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        return Ok(students);
+    }
 
-            var students = await _studentService.GetAllBySchoolAsync(schoolId);
+    [HttpGet("{id}")]
+    public async Task<ActionResult<StudentResponse>> Get(int id, int schoolId)
+    {
+        var student = await _studentService.GetByIdAsync(id);
+        if (student.SchoolId != schoolId)
+            return NotFound();
 
-            return Ok(students);
+        var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewStudentRequirement());
 
-        }
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<StudentResponse>> Get(int id, int schoolId)
-        {
-            var student = await _studentService.GetByIdAsync(id);
-            if (student.SchoolId != schoolId)
-                return NotFound();
+        return Ok(student);
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewStudentRequirement());
+    [HttpPost]
+    [Authorize("RequireSchoolOwnerOrAdmin")]
+    public async Task<ActionResult<CreatedStudentResponse>> Create(int schoolId,
+        [FromBody] CreateStudentRequest request)
+    {
+        var _ = await _schoolService.GetByIdAsync(schoolId);
 
-            if (!authResult.Succeeded)
-                return Forbid();
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            return Ok(student);
-        }
+        var createdStudent = await _studentService.CreateAsync(request, schoolId);
+        return CreatedAtAction(nameof(Get), new { id = createdStudent.Id, schoolId }, createdStudent);
+    }
 
-        [HttpPost]
-        [Authorize("RequireSchoolOwnerOrAdmin")]
-        public async Task<ActionResult<CreatedStudentResponse>> Create(int schoolId, [FromBody] CreateStudentRequest request)
-        {
-            var _ = await _schoolService.GetByIdAsync(schoolId);
+    [HttpPut("{id}")]
+    [Authorize("RequireSchoolOwnerOrAdmin")]
+    public async Task<IActionResult> Update(int schoolId, int id, [FromBody] UpdateStudentRequest request)
+    {
+        var student = await _studentService.GetByIdAsync(id);
+        if (student.SchoolId != schoolId)
+            return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            var createdStudent = await _studentService.CreateAsync(request, schoolId);
-            return CreatedAtAction(nameof(Get), new { id = createdStudent.Id, schoolId }, createdStudent);
-        }
+        await _studentService.UpdateAsync(id, request);
+        return NoContent();
+    }
 
-        [HttpPut("{id}")]
-        [Authorize("RequireSchoolOwnerOrAdmin")]
-        public async Task<IActionResult> Update(int schoolId, int id, [FromBody] UpdateStudentRequest request)
-        {
-            var student = await _studentService.GetByIdAsync(id);
-            if (student.SchoolId != schoolId)
-                return NotFound();
+    [HttpDelete("{id}")]
+    [Authorize("RequireSchoolOwnerOrAdmin")]
+    public async Task<IActionResult> Delete(int schoolId, int id)
+    {
+        var student = await _studentService.GetByIdAsync(id);
+        if (student.SchoolId != schoolId)
+            return NotFound();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            await _studentService.UpdateAsync(id, request);
-            return NoContent();
-        }
+        await _studentService.DeleteAsync(id);
+        return NoContent();
+    }
 
-        [HttpDelete("{id}")]
-        [Authorize("RequireSchoolOwnerOrAdmin")]
-        public async Task<IActionResult> Delete(int schoolId, int id)
-        {
-            var student = await _studentService.GetByIdAsync(id);
-            if (student.SchoolId != schoolId)
-                return NotFound();
+    [HttpGet("without-class-group")]
+    [Authorize("RequireSchoolOwnerOrAdmin")]
+    public async Task<ActionResult<IEnumerable<StudentResponse>>> GetStudentsWithoutClassGroup(int schoolId)
+    {
+        var _ = await _schoolService.GetByIdAsync(schoolId);
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            await _studentService.DeleteAsync(id);
-            return NoContent();
-        }
-
-        [HttpGet("without-class-group")]
-        [Authorize("RequireSchoolOwnerOrAdmin")]
-        public async Task<ActionResult<IEnumerable<StudentResponse>>> GetStudentsWithoutClassGroup(int schoolId)
-        {
-            var _ = await _schoolService.GetByIdAsync(schoolId);
-
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
-
-            var students = await _studentService.GetWithoutClassGroupAsync(schoolId);
-            return Ok(students);
-        }
-
+        var students = await _studentService.GetWithoutClassGroupAsync(schoolId);
+        return Ok(students);
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers
+﻿namespace TeachTether.Application.Interfaces.Services.DeletionHelpers;
+
+public interface IGuardianDeletionHelper
 {
-    public interface IGuardianDeletionHelper
-    {
-        Task DeleteGuardianAsync(int id);
-    }
+    Task DeleteGuardianAsync(int id);
 }

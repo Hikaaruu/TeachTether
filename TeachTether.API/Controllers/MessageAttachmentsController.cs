@@ -3,42 +3,37 @@ using Microsoft.AspNetCore.Mvc;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.Interfaces.Services;
 
-namespace TeachTether.API.Controllers
+namespace TeachTether.API.Controllers;
+
+[Route("api/threads/{threadId}/messages/{messageId}/attachments")]
+[ApiController]
+[Authorize]
+public class MessageAttachmentsController(
+    IAuthorizationService authorizationService,
+    IMessageThreadService messageThreadService,
+    IMessageService messageService,
+    IMessageAttachmentService messageAttachmentService) : ControllerBase
 {
-    [Route("api/threads/{threadId}/messages/{messageId}/attachments")]
-    [ApiController]
-    [Authorize]
-    public class MessageAttachmentsController : ControllerBase
+    private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly IMessageAttachmentService _messageAttachmentService = messageAttachmentService;
+    private readonly IMessageService _messageService = messageService;
+    private readonly IMessageThreadService _messageThreadService = messageThreadService;
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> Get(int id, int threadId, int messageId)
     {
-        private readonly IAuthorizationService _authorizationService;
-        private readonly IMessageThreadService _messageThreadService;
-        private readonly IMessageService _messageService;
-        private readonly IMessageAttachmentService _messageAttachmentService;
+        var thread = await _messageThreadService.GetByIdAsync(threadId);
+        var message = await _messageService.GetByIdAsync(messageId);
 
-        public MessageAttachmentsController(IAuthorizationService authorizationService, IMessageThreadService messageThreadService, IMessageService messageService, IMessageAttachmentService messageAttachmentService)
-        {
-            _authorizationService = authorizationService;
-            _messageThreadService = messageThreadService;
-            _messageService = messageService;
-            _messageAttachmentService = messageAttachmentService;
-        }
+        if (message.ThreadId != thread.Id)
+            return NotFound();
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id, int threadId, int messageId)
-        {
-            var thread = await _messageThreadService.GetByIdAsync(threadId);
-            var message = await _messageService.GetByIdAsync(messageId);
+        var file = await _messageAttachmentService.GetFileByIdAsync(id);
 
-            if (message.ThreadId != thread.Id)
-                return NotFound();
+        var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewThreadRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            var file = await _messageAttachmentService.GetFileByIdAsync(id);
-
-            var authResult = await _authorizationService.AuthorizeAsync(User, id, new CanViewThreadRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
-
-            return File(file.Content, file.ContentType, file.FileName);
-        }
+        return File(file.Content, file.ContentType, file.FileName);
     }
 }

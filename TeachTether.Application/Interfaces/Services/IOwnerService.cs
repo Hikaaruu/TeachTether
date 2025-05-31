@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.Interfaces.Services
+﻿namespace TeachTether.Application.Interfaces.Services;
+
+public interface IOwnerService
 {
-    public interface IOwnerService
-    {
-        Task<bool> ExistsAsync(int id);
-    }
+    Task<bool> ExistsAsync(int id);
 }

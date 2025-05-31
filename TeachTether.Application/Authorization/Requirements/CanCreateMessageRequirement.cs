@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 
-namespace TeachTether.Application.Authorization.Requirements
+namespace TeachTether.Application.Authorization.Requirements;
+
+public class CanCreateMessageRequirement : IAuthorizationRequirement
 {
-    public class CanCreateMessageRequirement : IAuthorizationRequirement
-    {
-    }
 }

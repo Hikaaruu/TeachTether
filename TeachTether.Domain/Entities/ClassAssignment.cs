@@ -1,9 +1,8 @@
-﻿namespace TeachTether.Domain.Entities
+﻿namespace TeachTether.Domain.Entities;
+
+public class ClassAssignment
 {
-    public class ClassAssignment
-    {
-        public int Id { get; set; }
-        public int ClassGroupSubjectId { get; set; }
-        public int TeacherId { get; set; }
-    }
+    public int Id { get; set; }
+    public int ClassGroupSubjectId { get; set; }
+    public int TeacherId { get; set; }
 }

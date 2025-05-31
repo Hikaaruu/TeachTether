@@ -2,74 +2,50 @@
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 
-namespace TeachTether.Application.Services.DeletionHelpers
+namespace TeachTether.Application.Services.DeletionHelpers;
+
+public class SchoolDeletionHelper(
+    IUnitOfWork unitOfWork,
+    IStudentDeletionHelper studentDeletionHelper,
+    ITeacherDeletionHelper teacherDeletionHelper,
+    IGuardianDeletionHelper guardianDeletionHelper,
+    ISchoolAdminDeletionHelper schoolAdminDeletionHelper,
+    ISubjectDeletionHelper subjectDeletionHelper,
+    IClassGroupDeletionHelper classGroupDeletionHelper) : ISchoolDeletionHelper
 {
-    public class SchoolDeletionHelper : ISchoolDeletionHelper
+    private readonly IClassGroupDeletionHelper _classGroupDeletionHelper = classGroupDeletionHelper;
+    private readonly IGuardianDeletionHelper _guardianDeletionHelper = guardianDeletionHelper;
+    private readonly ISchoolAdminDeletionHelper _schoolAdminDeletionHelper = schoolAdminDeletionHelper;
+    private readonly IStudentDeletionHelper _studentDeletionHelper = studentDeletionHelper;
+    private readonly ISubjectDeletionHelper _subjectDeletionHelper = subjectDeletionHelper;
+    private readonly ITeacherDeletionHelper _teacherDeletionHelper = teacherDeletionHelper;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    public async Task DeleteSchoolAsync(int id)
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ISubjectDeletionHelper _subjectDeletionHelper;
-        private readonly IClassGroupDeletionHelper _classGroupDeletionHelper;
-        private readonly IStudentDeletionHelper _studentDeletionHelper;
-        private readonly ITeacherDeletionHelper _teacherDeletionHelper;
-        private readonly IGuardianDeletionHelper _guardianDeletionHelper;
-        private readonly ISchoolAdminDeletionHelper _schoolAdminDeletionHelper;
+        var school = await _unitOfWork.Schools.GetByIdAsync(id)
+                     ?? throw new NotFoundException("School Not Found");
 
-        public SchoolDeletionHelper(IUnitOfWork unitOfWork, IStudentDeletionHelper studentDeletionHelper, ITeacherDeletionHelper teacherDeletionHelper, IGuardianDeletionHelper guardianDeletionHelper, ISchoolAdminDeletionHelper schoolAdminDeletionHelper, ISubjectDeletionHelper subjectDeletionHelper, IClassGroupDeletionHelper classGroupDeletionHelper)
-        {
-            _unitOfWork = unitOfWork;
-            _studentDeletionHelper = studentDeletionHelper;
-            _teacherDeletionHelper = teacherDeletionHelper;
-            _guardianDeletionHelper = guardianDeletionHelper;
-            _schoolAdminDeletionHelper = schoolAdminDeletionHelper;
-            _subjectDeletionHelper = subjectDeletionHelper;
-            _classGroupDeletionHelper = classGroupDeletionHelper;
-        }
+        var subjects = await _unitOfWork.Subjects.GetBySchoolIdAsync(id);
+        foreach (var subject in subjects) await _subjectDeletionHelper.DeleteSubjectAsync(subject.Id);
 
-        public async Task DeleteSchoolAsync(int id)
-        {
-            var school = await _unitOfWork.Schools.GetByIdAsync(id)
-                ?? throw new NotFoundException("School Not Found");
+        var classGroups = await _unitOfWork.ClassGroups.GetBySchoolIdAsync(id);
+        foreach (var classGroup in classGroups) await _classGroupDeletionHelper.DeleteClassGroupAsync(classGroup.Id);
 
-            var subjects = await _unitOfWork.Subjects.GetBySchoolIdAsync(id);
-            foreach (var subject in subjects)
-            {
-                await _subjectDeletionHelper.DeleteSubjectAsync(subject.Id);
-            }
+        var students = await _unitOfWork.Students.GetBySchoolIdAsync(id);
+        foreach (var s in students) await _studentDeletionHelper.DeleteStudentAsync(s.Id);
 
-            var classGroups = await _unitOfWork.ClassGroups.GetBySchoolIdAsync(id);
-            foreach (var classGroup in classGroups)
-            {
-                await _classGroupDeletionHelper.DeleteClassGroupAsync(classGroup.Id);
-            }
+        var teachers = await _unitOfWork.Teachers.GetBySchoolIdAsync(id);
+        foreach (var t in teachers) await _teacherDeletionHelper.DeleteTeacherAsync(t.Id);
 
-            var students = await _unitOfWork.Students.GetBySchoolIdAsync(id);
-            foreach (var s in students)
-            {
-                await _studentDeletionHelper.DeleteStudentAsync(s.Id);
-            }
+        var guardians = await _unitOfWork.Guardians.GetBySchoolIdAsync(id);
+        foreach (var g in guardians) await _guardianDeletionHelper.DeleteGuardianAsync(g.Id);
 
-            var teachers = await _unitOfWork.Teachers.GetBySchoolIdAsync(id);
-            foreach (var t in teachers)
-            {
-                await _teacherDeletionHelper.DeleteTeacherAsync(t.Id);
-            }
+        var admins = await _unitOfWork.SchoolAdmins.GetBySchoolIdAsync(id);
+        foreach (var a in admins) await _schoolAdminDeletionHelper.DeleteSchoolAdminAsync(a.Id);
 
-            var guardians = await _unitOfWork.Guardians.GetBySchoolIdAsync(id);
-            foreach (var g in guardians)
-            {
-                await _guardianDeletionHelper.DeleteGuardianAsync(g.Id);
-            }
+        _unitOfWork.Schools.Delete(school);
 
-            var admins = await _unitOfWork.SchoolAdmins.GetBySchoolIdAsync(id);
-            foreach (var a in admins)
-            {
-                await _schoolAdminDeletionHelper.DeleteSchoolAdminAsync(a.Id);
-            }
-
-            _unitOfWork.Schools.Delete(school);
-
-            await _unitOfWork.SaveChangesAsync();
-
-        }
+        await _unitOfWork.SaveChangesAsync();
     }
 }

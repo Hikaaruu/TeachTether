@@ -1,8 +1,7 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class SchoolResponse
 {
-    public class SchoolResponse
-    {
-        public int Id { get; set; }
-        public required string Name { get; set; }
-    }
+    public int Id { get; set; }
+    public required string Name { get; set; }
 }

@@ -1,90 +1,86 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Authorization.Handlers
+namespace TeachTether.Application.Authorization.Handlers;
+
+public class CanModifyStudentRecordsHandler(IUnitOfWork unitOfWork)
+    : AuthorizationHandler<CanModifyStudentRecordsRequirement, (int, int)>
 {
-    public class CanModifyStudentRecordsHandler : AuthorizationHandler<CanModifyStudentRecordsRequirement, (int, int)>
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context,
+        CanModifyStudentRecordsRequirement requirement, (int, int) resource)
     {
-        private readonly IUnitOfWork _unitOfWork;
+        var (studentId, subjectId) = resource;
 
-        public CanModifyStudentRecordsHandler(IUnitOfWork unitOfWork)
+
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userType = context.User.FindFirstValue(ClaimTypes.Role);
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userType))
+            return;
+
+        var type = Enum.Parse<UserType>(userType);
+
+        var student = await _unitOfWork.Students.GetByIdAsync(studentId);
+        if (student == null)
+            return;
+
+        var school = await _unitOfWork.Schools.GetByIdAsync(student.SchoolId);
+
+        if (school == null)
+            return;
+
+        var canView = false;
+
+        switch (type)
         {
-            _unitOfWork = unitOfWork;
-        }
+            case UserType.SchoolOwner:
+                canView = (await _unitOfWork.SchoolOwners.GetByUserIdAsync(userId))?.Id == school.SchoolOwnerId;
+                break;
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CanModifyStudentRecordsRequirement requirement, (int, int) resource)
-        {
-            var (studentId, subjectId) = resource;
+            case UserType.SchoolAdmin:
+                canView = (await _unitOfWork.SchoolAdmins.GetByUserIdAsync(userId))?.SchoolId == school.Id;
+                break;
 
-
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userType = context.User.FindFirstValue(ClaimTypes.Role);
-
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userType))
-                return;
-
-            var type = Enum.Parse<UserType>(userType);
-
-            var student = await _unitOfWork.Students.GetByIdAsync(studentId);
-            if (student == null)
-                return;
-
-            var school = await _unitOfWork.Schools.GetByIdAsync(student.SchoolId);
-
-            if (school == null)
-                return;
-
-            bool canView = false;
-
-            switch (type)
+            case UserType.Teacher:
             {
-                case UserType.SchoolOwner:
-                    canView = (await _unitOfWork.SchoolOwners.GetByUserIdAsync(userId))?.Id == school.SchoolOwnerId;
-                    break;
+                var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId);
+                if (teacher == null)
+                    return;
 
-                case UserType.SchoolAdmin:
-                    canView = (await _unitOfWork.SchoolAdmins.GetByUserIdAsync(userId))?.SchoolId == school.Id;
-                    break;
+                var classGroupStudent = await _unitOfWork.ClassGroupStudents.GetByStudentIdAsync(studentId);
 
-                case UserType.Teacher:
-                    {
-                        var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId);
-                        if (teacher == null)
-                            return;
+                if (classGroupStudent == null)
+                    return;
 
-                        var classGroupStudent = await _unitOfWork.ClassGroupStudents.GetByStudentIdAsync(studentId);
+                var classGroup = await _unitOfWork.ClassGroups.GetByIdAsync(classGroupStudent.ClassGroupId);
 
-                        if (classGroupStudent == null)
-                            return;
+                if (classGroup == null)
+                    return;
 
-                        var classGroup = await _unitOfWork.ClassGroups.GetByIdAsync(classGroupStudent.ClassGroupId);
-
-                        if (classGroup == null)
-                            return;
-
-                        var classGroupSubjectId = (await _unitOfWork.ClassGroupsSubjects
-                            .GetByClassGroupIdAsync(classGroup.Id))
-                            .Where(cgs => cgs.SubjectId == subjectId)
-                            .Select(cgs => cgs.Id).SingleOrDefault();
+                var classGroupSubjectId = (await _unitOfWork.ClassGroupsSubjects
+                        .GetByClassGroupIdAsync(classGroup.Id))
+                    .Where(cgs => cgs.SubjectId == subjectId)
+                    .Select(cgs => cgs.Id).SingleOrDefault();
 
 
-                        canView = await _unitOfWork.ClassAssignments
-                            .AnyAsync(ca => ca.TeacherId == teacher.Id &&
-                            ca.ClassGroupSubjectId == classGroupSubjectId);
+                canView = await _unitOfWork.ClassAssignments
+                    .AnyAsync(ca => ca.TeacherId == teacher.Id &&
+                                    ca.ClassGroupSubjectId == classGroupSubjectId);
 
-                        break;
-                    }
-
-                default:
-                    canView = false;
-                    break;
+                break;
             }
 
-            if (canView)
-                context.Succeed(requirement);
+            default:
+                canView = false;
+                break;
         }
+
+        if (canView)
+            context.Succeed(requirement);
     }
 }

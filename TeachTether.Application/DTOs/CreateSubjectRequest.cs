@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class CreateSubjectRequest
 {
-    public class CreateSubjectRequest
-    {
-        public required string Name { get; set; }
-    }
+    public required string Name { get; set; }
 }

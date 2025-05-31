@@ -1,8 +1,7 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class LoginRequest
 {
-    public class LoginRequest
-    {
-        public required string UserName { get; set; }
-        public required string Password { get; set; }
-    }
+    public required string UserName { get; set; }
+    public required string Password { get; set; }
 }

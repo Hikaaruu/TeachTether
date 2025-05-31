@@ -1,10 +1,9 @@
 ﻿using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Interfaces.Repositories
+namespace TeachTether.Application.Interfaces.Repositories;
+
+public interface IMessageAttachmentRepository : IRepository<MessageAttachment>
 {
-    public interface IMessageAttachmentRepository : IRepository<MessageAttachment>
-    {
-        Task<IEnumerable<MessageAttachment>> GetByMessageIdAsync(int messageId);
-        Task<MessageAttachment?> GetByFileUrlAsync(string fileUrl);
-    }
+    Task<IEnumerable<MessageAttachment>> GetByMessageIdAsync(int messageId);
+    Task<MessageAttachment?> GetByFileUrlAsync(string fileUrl);
 }

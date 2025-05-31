@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.Common.Models
-{
-    public sealed record FileDownloadModel(
+﻿namespace TeachTether.Application.Common.Models;
+
+public sealed record FileDownloadModel(
     Stream Content,
     string ContentType,
     string FileName);
-}

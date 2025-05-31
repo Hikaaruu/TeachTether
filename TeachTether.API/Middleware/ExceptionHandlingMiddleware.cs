@@ -1,62 +1,36 @@
 ﻿using TeachTether.API.Errors;
 using TeachTether.Application.Common.Exceptions;
 
-namespace TeachTether.API.Middleware
+namespace TeachTether.API.Middleware;
+
+public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
 {
-    public class ExceptionHandlingMiddleware
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger = logger;
+    private readonly RequestDelegate _next = next;
+
+    public async Task Invoke(HttpContext context)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+        try
         {
-            _next = next;
-            _logger = logger;
+            await _next(context);
         }
-
-        public async Task Invoke(HttpContext context)
+        catch (Exception ex)
         {
-            try
+            _logger.LogError(ex, "Unhandled exception occurred");
+
+            context.Response.ContentType = "application/json";
+            var statusCode = ex switch
             {
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unhandled exception occurred");
+                NotFoundException => StatusCodes.Status404NotFound,
+                ForbiddenException => StatusCodes.Status403Forbidden,
+                UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
+                BadRequestException => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status500InternalServerError
+            };
+            context.Response.StatusCode = statusCode;
+            var error = ApiErrorResponseFactory.FromContext(context, statusCode, detail: ex.Message);
 
-                context.Response.ContentType = "application/json";
-
-                int statusCode;
-
-                switch (ex)
-                {
-                    case NotFoundException:
-                        statusCode = StatusCodes.Status404NotFound;
-                        break;
-
-                    case ForbiddenException:
-                        statusCode = StatusCodes.Status403Forbidden;
-                        break;
-
-                    case UnauthorizedAccessException:
-                        statusCode = StatusCodes.Status401Unauthorized;
-                        break;
-
-                    case BadRequestException:
-                        statusCode = StatusCodes.Status400BadRequest;
-                        break;
-
-                    default:
-                        statusCode = StatusCodes.Status500InternalServerError;
-                        break;
-                }
-
-                context.Response.StatusCode = statusCode;
-                var error = ApiErrorResponseFactory.FromContext(context, statusCode,detail:ex.Message);
-
-                await context.Response.WriteAsJsonAsync(error);
-            }
+            await context.Response.WriteAsJsonAsync(error);
         }
     }
-
 }

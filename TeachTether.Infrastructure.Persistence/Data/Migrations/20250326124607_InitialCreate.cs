@@ -471,7 +471,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ClassGroups_SchoolId_GradeYear_Section",
                 table: "ClassGroups",
-                columns: new[] { "SchoolId", "GradeYear", "Section" },
+                columns: ["SchoolId", "GradeYear", "Section"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -499,7 +499,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_GuardianStudents_GuardianId_StudentId",
                 table: "GuardianStudents",
-                columns: new[] { "GuardianId", "StudentId" },
+                columns: ["GuardianId", "StudentId"],
                 unique: true);
 
             migrationBuilder.CreateIndex(

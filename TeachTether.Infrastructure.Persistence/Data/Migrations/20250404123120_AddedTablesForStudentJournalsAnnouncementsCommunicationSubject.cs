@@ -309,7 +309,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ClassAssignments_ClassGroupId_SubjectId_TeacherId",
                 table: "ClassAssignments",
-                columns: new[] { "ClassGroupId", "SubjectId", "TeacherId" },
+                columns: ["ClassGroupId", "SubjectId", "TeacherId"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -320,7 +320,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_AnnouncementClassGroups_AnnouncementId_ClassGroupId",
                 table: "AnnouncementClassGroups",
-                columns: new[] { "AnnouncementId", "ClassGroupId" },
+                columns: ["AnnouncementId", "ClassGroupId"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -336,7 +336,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ClassGroupSubjects_ClassGroupId_SubjectId",
                 table: "ClassGroupSubjects",
-                columns: new[] { "ClassGroupId", "SubjectId" },
+                columns: ["ClassGroupId", "SubjectId"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -373,7 +373,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_MessageThreads_TeacherId_GuardianId",
                 table: "MessageThreads",
-                columns: new[] { "TeacherId", "GuardianId" },
+                columns: ["TeacherId", "GuardianId"],
                 unique: true);
 
             migrationBuilder.CreateIndex(

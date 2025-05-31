@@ -2,15 +2,14 @@
 using TeachTether.Application.DTOs;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Mapping
+namespace TeachTether.Application.Mapping;
+
+public class SubjectMappingProfile : Profile
 {
-    public class SubjectMappingProfile : Profile
+    public SubjectMappingProfile()
     {
-        public SubjectMappingProfile()
-        {
-            CreateMap<CreateSubjectRequest, Subject>();
-            CreateMap<UpdateSubjectRequest, Subject>();
-            CreateMap<Subject, SubjectResponse>();
-        }
+        CreateMap<CreateSubjectRequest, Subject>();
+        CreateMap<UpdateSubjectRequest, Subject>();
+        CreateMap<Subject, SubjectResponse>();
     }
 }

@@ -38,7 +38,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ClassAssignments_ClassGroupSubjectId_TeacherId",
                 table: "ClassAssignments",
-                columns: new[] { "ClassGroupSubjectId", "TeacherId" },
+                columns: ["ClassGroupSubjectId", "TeacherId"],
                 unique: true);
 
             migrationBuilder.AddForeignKey(
@@ -76,7 +76,7 @@ namespace TeachTether.Infrastructure.Persistence.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ClassAssignments_ClassGroupId_SubjectId_TeacherId",
                 table: "ClassAssignments",
-                columns: new[] { "ClassGroupId", "SubjectId", "TeacherId" },
+                columns: ["ClassGroupId", "SubjectId", "TeacherId"],
                 unique: true);
 
             migrationBuilder.CreateIndex(

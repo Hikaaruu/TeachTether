@@ -1,8 +1,7 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class UpdateStudentBehaviorRequest
 {
-    public class UpdateStudentBehaviorRequest
-    {
-        public decimal BehaviorScore { get; set; }
-        public string? Comment { get; set; }
-    }
+    public decimal BehaviorScore { get; set; }
+    public string? Comment { get; set; }
 }

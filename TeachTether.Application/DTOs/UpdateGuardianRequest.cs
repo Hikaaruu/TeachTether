@@ -1,10 +1,9 @@
 ﻿using TeachTether.Application.Common.Models;
 
-namespace TeachTether.Application.DTOs
+namespace TeachTether.Application.DTOs;
+
+public class UpdateGuardianRequest
 {
-    public class UpdateGuardianRequest
-    {
-        public required UpdateUserDto User { get; set; }
-        public DateOnly DateOfBirth { get; set; }
-    }
+    public required UpdateUserDto User { get; set; }
+    public DateOnly DateOfBirth { get; set; }
 }

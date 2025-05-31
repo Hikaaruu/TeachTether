@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class UpdateSchoolRequest
 {
-    public class UpdateSchoolRequest
-    {
-        public required string Name { get; set; }
-    }
+    public required string Name { get; set; }
 }

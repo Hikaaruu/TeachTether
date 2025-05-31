@@ -1,14 +1,17 @@
-﻿namespace TeachTether.Application.Common
+﻿namespace TeachTether.Application.Common;
+
+public class OperationResult
 {
-    public class OperationResult
+    public bool Succeeded { get; set; }
+    public List<string> Errors { get; set; } = [];
+
+    public static OperationResult Success()
     {
-        public bool Succeeded { get; set; }
-        public List<string> Errors { get; set; } = new();
-
-        public static OperationResult Success() => new() { Succeeded = true };
-
-        public static OperationResult Failure(IEnumerable<string> errors) =>
-            new() { Succeeded = false, Errors = errors.ToList() };
+        return new OperationResult { Succeeded = true };
     }
 
+    public static OperationResult Failure(IEnumerable<string> errors)
+    {
+        return new OperationResult { Succeeded = false, Errors = [.. errors] };
+    }
 }

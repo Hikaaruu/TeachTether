@@ -1,24 +1,27 @@
-﻿using Microsoft.AspNetCore.WebUtilities;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.WebUtilities;
 
-namespace TeachTether.API.Errors
+namespace TeachTether.API.Errors;
+
+public static class ApiErrorResponseFactory
 {
-    public static class ApiErrorResponseFactory
+    public static ApiErrorResponse FromContext(HttpContext context, int statusCode, string? title = null,
+        string? detail = null)
     {
-        public static ApiErrorResponse FromContext(HttpContext context, int statusCode, string? title = null, string? detail = null)
-        {
-            var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-            var instance = context.Request.Path;
+        var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
+        var instance = context.Request.Path;
 
-            return new ApiErrorResponse(statusCode,
-                title ?? ReasonPhrases.GetReasonPhrase(statusCode),
-                detail ?? GetDetailForStatusCode(statusCode),
-                instance,
-                traceId
-            );
-        }
+        return new ApiErrorResponse(statusCode,
+            title ?? ReasonPhrases.GetReasonPhrase(statusCode),
+            detail ?? GetDetailForStatusCode(statusCode),
+            instance,
+            traceId
+        );
+    }
 
-        private static string GetDetailForStatusCode(int statusCode) => statusCode switch
+    private static string GetDetailForStatusCode(int statusCode)
+    {
+        return statusCode switch
         {
             400 => "The request could not be understood or was missing required parameters.",
             401 => "Authentication is required and has failed or has not yet been provided.",
@@ -30,5 +33,4 @@ namespace TeachTether.API.Errors
             _ => "An error occurred while processing your request."
         };
     }
-
 }

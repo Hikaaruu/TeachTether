@@ -3,26 +3,24 @@ using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 using TeachTether.Infrastructure.Persistence.Data;
 
-namespace TeachTether.Infrastructure.Persistence.Repositories
+namespace TeachTether.Infrastructure.Persistence.Repositories;
+
+public class MessageThreadRepository(ApplicationDbContext context)
+    : Repository<MessageThread>(context), IMessageThreadRepository
 {
-    public class MessageThreadRepository : Repository<MessageThread>, IMessageThreadRepository
+    public async Task<IEnumerable<MessageThread>> GetByGuardianIdAsync(int guardianId)
     {
-        public MessageThreadRepository(ApplicationDbContext context) : base(context) { }
+        return await _dbSet
+            .AsNoTracking()
+            .Where(mt => mt.GuardianId == guardianId)
+            .ToListAsync();
+    }
 
-        public async Task<IEnumerable<MessageThread>> GetByGuardianIdAsync(int guardianId)
-        {
-            return await _dbSet
-                .AsNoTracking()
-                .Where(mt => mt.GuardianId == guardianId)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<MessageThread>> GetByTeacherIdAsync(int teacherId)
-        {
-            return await _dbSet
-               .AsNoTracking()
-               .Where(mt => mt.TeacherId == teacherId)
-               .ToListAsync();
-        }
+    public async Task<IEnumerable<MessageThread>> GetByTeacherIdAsync(int teacherId)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Where(mt => mt.TeacherId == teacherId)
+            .ToListAsync();
     }
 }

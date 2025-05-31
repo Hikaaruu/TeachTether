@@ -2,15 +2,14 @@
 using TeachTether.Application.DTOs;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Mapping
+namespace TeachTether.Application.Mapping;
+
+public class StudentBehaviorMappingProfile : Profile
 {
-    public class StudentBehaviorMappingProfile : Profile
+    public StudentBehaviorMappingProfile()
     {
-        public StudentBehaviorMappingProfile()
-        {
-            CreateMap<CreateStudentBehaviorRequest, StudentBehavior>();
-            CreateMap<UpdateStudentBehaviorRequest, StudentBehavior>();
-            CreateMap<StudentBehavior, StudentBehaviorResponse>();
-        }
+        CreateMap<CreateStudentBehaviorRequest, StudentBehavior>();
+        CreateMap<UpdateStudentBehaviorRequest, StudentBehavior>();
+        CreateMap<StudentBehavior, StudentBehaviorResponse>();
     }
 }

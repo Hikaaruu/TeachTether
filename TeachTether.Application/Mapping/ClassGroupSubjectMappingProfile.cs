@@ -2,13 +2,12 @@
 using TeachTether.Application.DTOs;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Mapping
+namespace TeachTether.Application.Mapping;
+
+public class ClassGroupSubjectMappingProfile : Profile
 {
-    public class ClassGroupSubjectMappingProfile : Profile
+    public ClassGroupSubjectMappingProfile()
     {
-        public ClassGroupSubjectMappingProfile()
-        {
-            CreateMap<CreateClassGroupSubjectRequest,ClassGroupSubject>();
-        }
+        CreateMap<CreateClassGroupSubjectRequest, ClassGroupSubject>();
     }
 }

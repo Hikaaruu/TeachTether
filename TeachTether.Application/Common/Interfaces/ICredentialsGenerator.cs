@@ -1,8 +1,7 @@
-﻿namespace TeachTether.Application.Common.Interfaces
+﻿namespace TeachTether.Application.Common.Interfaces;
+
+public interface ICredentialsGenerator
 {
-    public interface ICredentialsGenerator
-    {
-        string GenerateUsername(string firstName, string? middleName, string lastName);
-        string GeneratePassword();
-    }
+    string GenerateUsername(string firstName, string? middleName, string lastName);
+    string GeneratePassword();
 }

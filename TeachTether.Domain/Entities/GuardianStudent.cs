@@ -1,9 +1,8 @@
-﻿namespace TeachTether.Domain.Entities
+﻿namespace TeachTether.Domain.Entities;
+
+public class GuardianStudent
 {
-    public class GuardianStudent
-    {
-        public int Id { get; set; }
-        public int GuardianId { get; set; }
-        public int StudentId { get; set; }
-    }
+    public int Id { get; set; }
+    public int GuardianId { get; set; }
+    public int StudentId { get; set; }
 }

@@ -1,133 +1,136 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
-namespace TeachTether.API.Controllers
+namespace TeachTether.API.Controllers;
+
+[Route("api/schools/{schoolId}/students/{studentId}/attendance")]
+[ApiController]
+[Authorize]
+public class StudentAttendancesController(
+    ISchoolService schoolService,
+    IAuthorizationService authorizationService,
+    ITeacherService teacherService,
+    IStudentService studentService,
+    ISubjectService subjectService,
+    IStudentAttendanceService studentAttendanceService) : ControllerBase
 {
-    [Route("api/schools/{schoolId}/students/{studentId}/attendance")]
-    [ApiController]
-    [Authorize]
-    public class StudentAttendancesController : ControllerBase
+    private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly ISchoolService _schoolService = schoolService;
+    private readonly IStudentAttendanceService _studentAttendanceService = studentAttendanceService;
+    private readonly IStudentService _studentService = studentService;
+    private readonly ISubjectService _subjectService = subjectService;
+    private readonly ITeacherService _teacherService = teacherService;
+
+    [HttpGet("/api/schools/{schoolId}/students/{studentId}/attendance/subjects/{subjectId}")]
+    public async Task<ActionResult<IEnumerable<StudentAttendanceResponse>>> GetAllByStudent(int studentId, int schoolId,
+        int subjectId)
     {
-        private readonly ISchoolService _schoolService;
-        private readonly IAuthorizationService _authorizationService;
-        private readonly ITeacherService _teacherService;
-        private readonly IStudentService _studentService;
-        private readonly ISubjectService _subjectService;
-        private readonly IStudentAttendanceService _studentAttendanceService;
+        _ = await _schoolService.GetByIdAsync(schoolId);
+        var student = await _studentService.GetByIdAsync(studentId);
+        var subject = await _subjectService.GetByIdAsync(subjectId);
+        if (student.SchoolId != schoolId || subject.SchoolId != schoolId)
+            return NotFound();
 
-        public StudentAttendancesController(ISchoolService schoolService, IAuthorizationService authorizationService, ITeacherService teacherService, IStudentService studentService, ISubjectService subjectService, IStudentAttendanceService studentAttendanceService)
-        {
-            _schoolService = schoolService;
-            _authorizationService = authorizationService;
-            _teacherService = teacherService;
-            _studentService = studentService;
-            _subjectService = subjectService;
-            _studentAttendanceService = studentAttendanceService;
-        }
+        var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, subjectId),
+            new CanViewRecordsOfStudentRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpGet("/api/schools/{schoolId}/students/{studentId}/attendance/subjects/{subjectId}")]
-        public async Task<ActionResult<IEnumerable<StudentAttendanceResponse>>> GetAllByStudent(int studentId, int schoolId, int subjectId)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var student = await _studentService.GetByIdAsync(studentId);
-            var subject = await _subjectService.GetByIdAsync(subjectId);
-            if (student.SchoolId != schoolId || subject.SchoolId != schoolId)
-                return NotFound();
+        var studentAttendances = await _studentAttendanceService.GetAllByStudentAsync(studentId, subjectId);
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, subjectId), new CanViewRecordsOfStudentRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        return Ok(studentAttendances);
+    }
 
-            var studentAttendances = await _studentAttendanceService.GetAllByStudentAsync(studentId, subjectId);
+    [HttpGet("{attendanceId}")]
+    public async Task<ActionResult<StudentAttendanceResponse>> Get(int studentId, int schoolId, int attendanceId)
+    {
+        _ = await _schoolService.GetByIdAsync(schoolId);
+        var student = await _studentService.GetByIdAsync(studentId);
+        var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
+        if (student.SchoolId != schoolId ||
+            attendance.StudentId != studentId)
+            return NotFound();
 
-            return Ok(studentAttendances);
-        }
+        var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, attendance.SubjectId),
+            new CanViewStudentRecordRequirement());
 
-        [HttpGet("{attendanceId}")]
-        public async Task<ActionResult<StudentAttendanceResponse>> Get(int studentId, int schoolId, int attendanceId)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var student = await _studentService.GetByIdAsync(studentId);
-            var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
-            if (student.SchoolId != schoolId ||
-                attendance.StudentId != studentId)
-                return NotFound();
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId,attendance.SubjectId), new CanViewStudentRecordRequirement());
+        return Ok(attendance);
+    }
 
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpPost]
+    [Authorize(Policy = "RequireTeacher")]
+    public async Task<ActionResult<StudentAttendanceResponse>> Create(int studentId, int schoolId,
+        [FromBody] CreateStudentAttendanceRequest request)
+    {
+        var teacherId = int.Parse(User.FindFirstValue("entity_id")!);
 
-            return Ok(attendance);
-        }
+        var school = await _schoolService.GetByIdAsync(schoolId);
+        var teacher = await _teacherService.GetByIdAsync(teacherId);
+        var student = await _studentService.GetByIdAsync(studentId);
+        var subject = await _subjectService.GetByIdAsync(request.SubjectId);
 
-        [HttpPost]
-        [Authorize(Policy = "RequireTeacher")]
-        public async Task<ActionResult<StudentAttendanceResponse>> Create(int studentId, int schoolId, [FromBody] CreateStudentAttendanceRequest request)
-        {
-            var teacherId = int.Parse(User.FindFirstValue("entity_id")!);
+        if (student.SchoolId != schoolId ||
+            teacher.SchoolId != schoolId ||
+            subject.SchoolId != schoolId)
+            return NotFound();
 
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var teacher = await _teacherService.GetByIdAsync(teacherId);
-            var student = await _studentService.GetByIdAsync(studentId);
-            var subject = await _subjectService.GetByIdAsync(request.SubjectId);
+        var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, request.SubjectId),
+            new CanCreateStudentRecordsRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            if (student.SchoolId != schoolId ||
-                teacher.SchoolId != schoolId ||
-                subject.SchoolId != schoolId)
-                return NotFound();
+        var studentAttendance = await _studentAttendanceService.CreateAsync(request, teacherId, studentId);
+        return CreatedAtAction(nameof(Get), new { attendanceId = studentAttendance.Id, studentId, schoolId },
+            studentAttendance);
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, request.SubjectId), new CanCreateStudentRecordsRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpPut("{attendanceId}")]
+    [Authorize(Policy = "RequireSchoolOwnerAdminOrTeacher")]
+    public async Task<IActionResult> Update(int studentId, int schoolId, int attendanceId,
+        [FromBody] UpdateStudentAttendanceRequest request)
+    {
+        _ = await _schoolService.GetByIdAsync(schoolId);
+        var student = await _studentService.GetByIdAsync(studentId);
+        var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
 
-            var studentAttendance = await _studentAttendanceService.CreateAsync(request, teacherId, studentId);
-            return CreatedAtAction(nameof(Get), new { attendanceId = studentAttendance.Id, studentId, schoolId }, studentAttendance);
-        }
+        if (student.SchoolId != schoolId ||
+            attendance.StudentId != studentId)
+            return NotFound();
 
-        [HttpPut("{attendanceId}")]
-        [Authorize(Policy = "RequireSchoolOwnerAdminOrTeacher")]
-        public async Task<IActionResult> Update(int studentId, int schoolId, int attendanceId, [FromBody] UpdateStudentAttendanceRequest request)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var student = await _studentService.GetByIdAsync(studentId);
-            var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
+        var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, attendance.SubjectId),
+            new CanModifyStudentRecordsRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            if (student.SchoolId != schoolId ||
-                attendance.StudentId != studentId)
-                return NotFound();
+        await _studentAttendanceService.UpdateAsync(attendanceId, request);
+        return NoContent();
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, attendance.SubjectId), new CanModifyStudentRecordsRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpDelete("{attendanceId}")]
+    [Authorize(Policy = "RequireSchoolOwnerAdminOrTeacher")]
+    public async Task<IActionResult> Delete(int studentId, int schoolId, int attendanceId)
+    {
+        _ = await _schoolService.GetByIdAsync(schoolId);
+        var student = await _studentService.GetByIdAsync(studentId);
+        var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
 
-            await _studentAttendanceService.UpdateAsync(attendanceId, request);
-            return NoContent();
-        }
+        if (student.SchoolId != schoolId ||
+            attendance.StudentId != studentId)
+            return NotFound();
 
-        [HttpDelete("{attendanceId}")]
-        [Authorize(Policy = "RequireSchoolOwnerAdminOrTeacher")]
-        public async Task<IActionResult> Delete(int studentId, int schoolId, int attendanceId)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var student = await _studentService.GetByIdAsync(studentId);
-            var attendance = await _studentAttendanceService.GetByIdAsync(attendanceId);
+        var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, attendance.SubjectId),
+            new CanModifyStudentRecordsRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            if (student.SchoolId != schoolId ||
-                attendance.StudentId != studentId)
-                return NotFound();
-
-            var authResult = await _authorizationService.AuthorizeAsync(User, (studentId, attendance.SubjectId), new CanModifyStudentRecordsRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
-
-            await _studentAttendanceService.DeleteAsync(attendanceId);
-            return NoContent();
-        }
-
+        await _studentAttendanceService.DeleteAsync(attendanceId);
+        return NoContent();
     }
 }

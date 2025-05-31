@@ -6,159 +6,152 @@ using TeachTether.Application.Interfaces.Services;
 using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Services
+namespace TeachTether.Application.Services;
+
+public class AnnouncementService(
+    IUnitOfWork unitOfWork,
+    IMapper mapper,
+    IUserService userService,
+    IAnnouncementDeletionHelper announcementDeletionHelper) : IAnnouncementService
 {
-    public class AnnouncementService : IAnnouncementService
+    private readonly IAnnouncementDeletionHelper _announcementDeletionHelper = announcementDeletionHelper;
+    private readonly IMapper _mapper = mapper;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IUserService _userService = userService;
+
+    public async Task<AnnouncementResponse> CreateAsync(CreateAnnouncementRequest request, int teacherId)
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
-        private readonly IUserService _userService;
-        private readonly IAnnouncementDeletionHelper _announcementDeletionHelper;
+        var announcement = _mapper.Map<Announcement>(request);
+        announcement.TeacherId = teacherId;
+        announcement.CreatedAt = DateTime.Now;
 
-        public AnnouncementService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService, IAnnouncementDeletionHelper announcementDeletionHelper)
+        await _unitOfWork.Announcements.AddAsync(announcement);
+        await _unitOfWork.SaveChangesAsync();
+
+        foreach (var item in request.ClassGroupIds)
         {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
-            _userService = userService;
-            _announcementDeletionHelper = announcementDeletionHelper;
+            var announcementClassGroup = new AnnouncementClassGroup
+            {
+                AnnouncementId = announcement.Id,
+                ClassGroupId = item
+            };
+            await _unitOfWork.AnnouncementClassGroups.AddAsync(announcementClassGroup);
         }
 
-        public async Task<AnnouncementResponse> CreateAsync(CreateAnnouncementRequest request, int teacherId)
+        await _unitOfWork.SaveChangesAsync();
+        return _mapper.Map<AnnouncementResponse>(announcement);
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        await _announcementDeletionHelper.DeleteAnnouncementAsync(id);
+    }
+
+    //rewrite
+    public async Task<IEnumerable<AnnouncementResponse>> GetAllBySchoolId(int schoolId)
+    {
+        var announcements = await _unitOfWork.Announcements.GetAllAsync();
+        var result = new List<Announcement>();
+
+        foreach (var announcement in announcements)
         {
-            var announcement = _mapper.Map<Announcement>(request);
-            announcement.TeacherId = teacherId;
-            announcement.CreatedAt = DateTime.Now;
+            var teacher = await _unitOfWork.Teachers.GetByIdAsync(announcement.TeacherId);
+            if (teacher != null && teacher.SchoolId == schoolId) result.Add(announcement);
+        }
 
-            await _unitOfWork.Announcements.AddAsync(announcement);
-            await _unitOfWork.SaveChangesAsync();
+        return _mapper.Map<IEnumerable<AnnouncementResponse>>(result);
+    }
 
-            foreach (var item in request.ClassGroupIds)
+
+    public async Task<IEnumerable<AnnouncementResponse>> GetAllForUserAsync(string userId)
+    {
+        var user = await _userService.GetByIdAsync(userId)
+                   ?? throw new NotFoundException("User not found");
+
+        IEnumerable<Announcement> announcements;
+
+        switch (user.UserType)
+        {
+            case UserType.Teacher:
             {
-                var announcementClassGroup = new AnnouncementClassGroup()
-                {
-                    AnnouncementId = announcement.Id,
-                    ClassGroupId = item
-                };
-                await _unitOfWork.AnnouncementClassGroups.AddAsync(announcementClassGroup);
+                var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId)
+                              ?? throw new NotFoundException("Teacher not found");
+
+                announcements = await _unitOfWork.Announcements.GetByTeacherIdAsync(teacher.Id);
+                break;
             }
-            await _unitOfWork.SaveChangesAsync();
-            return _mapper.Map<AnnouncementResponse>(announcement);
-        }
 
-        public async Task DeleteAsync(int id)
-        {
-            await _announcementDeletionHelper.DeleteAnnouncementAsync(id);
-        }
-
-        //rewrite
-        public async Task<IEnumerable<AnnouncementResponse>> GetAllBySchoolId(int schoolId)
-        {
-            var announcements = await _unitOfWork.Announcements.GetAllAsync();
-            var result = new List<Announcement>();
-
-            foreach (var announcement in announcements)
+            case UserType.Guardian:
             {
-                var teacher = await _unitOfWork.Teachers.GetByIdAsync(announcement.TeacherId);
-                if (teacher != null && teacher.SchoolId == schoolId)
+                var guardian = await _unitOfWork.Guardians.GetByUserIdAsync(userId)
+                               ?? throw new NotFoundException("Guardian not found");
+
+                var studentIds = (await _unitOfWork.GuardianStudents
+                        .GetByGuardianIdAsync(guardian.Id))
+                    .Select(gs => gs.StudentId);
+
+                var classGroupIds = (await _unitOfWork.ClassGroupStudents
+                        .GetAllAsync(cgs => studentIds.Contains(cgs.StudentId)))
+                    .Select(cgs => cgs.ClassGroupId);
+
+                var announcementIds = (await _unitOfWork.AnnouncementClassGroups
+                        .GetAllAsync(acg => classGroupIds.Contains(acg.ClassGroupId)))
+                    .Select(acg => acg.AnnouncementId);
+
+                announcements = (await _unitOfWork.Announcements.GetByIdsAsync(announcementIds))
+                    .Where(a => a.TargetAudience == AudienceType.Guardian ||
+                                a.TargetAudience == AudienceType.StudentAndGuardian);
+
+                break;
+            }
+
+            case UserType.Student:
+            {
+                var student = await _unitOfWork.Students.GetByUserIdAsync(userId)
+                              ?? throw new NotFoundException("Student not found");
+
+                var classGroupStudent = await _unitOfWork.ClassGroupStudents
+                    .GetByStudentIdAsync(student.Id);
+
+                if (classGroupStudent is null)
                 {
-                    result.Add(announcement);
+                    announcements = new List<Announcement>();
+                    break;
                 }
+
+                var announcementIds = (await _unitOfWork.AnnouncementClassGroups
+                        .GetByClassGroupIdAsync(classGroupStudent.ClassGroupId))
+                    .Select(acg => acg.AnnouncementId);
+
+                announcements = (await _unitOfWork.Announcements.GetByIdsAsync(announcementIds))
+                    .Where(a => a.TargetAudience == AudienceType.Student ||
+                                a.TargetAudience == AudienceType.StudentAndGuardian);
+
+                break;
             }
 
-            return _mapper.Map<IEnumerable<AnnouncementResponse>>(result);
+            default:
+                throw new Exception("Unexpected behavior occurred");
         }
 
+        return _mapper.Map<IEnumerable<AnnouncementResponse>>(announcements);
+    }
 
+    public async Task<AnnouncementResponse> GetByIdAsync(int id)
+    {
+        var announcement = await _unitOfWork.Announcements.GetByIdAsync(id)
+                           ?? throw new NotFoundException("Announcement not found");
 
-        public async Task<IEnumerable<AnnouncementResponse>> GetAllForUserAsync(string userId)
-        {
-            var user = await _userService.GetByIdAsync(userId)
-                ?? throw new NotFoundException("User not found");
+        return _mapper.Map<AnnouncementResponse>(announcement);
+    }
 
-            IEnumerable<Announcement> announcements;
+    public async Task UpdateAsync(int id, UpdateAnnouncementRequest request)
+    {
+        var announcement = await _unitOfWork.Announcements.GetByIdAsync(id)
+                           ?? throw new NotFoundException("Announcement not found");
 
-            switch (user.UserType)
-            {
-                case UserType.Teacher:
-                    {
-                        var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId)
-                            ?? throw new NotFoundException("Teacher not found");
-
-                        announcements = await _unitOfWork.Announcements.GetByTeacherIdAsync(teacher.Id);
-                        break;
-                    }
-
-                case UserType.Guardian:
-                    {
-                        var guardian = await _unitOfWork.Guardians.GetByUserIdAsync(userId)
-                            ?? throw new NotFoundException("Guardian not found");
-
-                        var studentIds = (await _unitOfWork.GuardianStudents
-                            .GetByGuardianIdAsync(guardian.Id))
-                            .Select(gs => gs.StudentId);
-
-                        var classGroupIds = (await _unitOfWork.ClassGroupStudents
-                            .GetAllAsync(cgs => studentIds.Contains(cgs.StudentId)))
-                            .Select(cgs => cgs.ClassGroupId);
-
-                        var announcementIds = (await _unitOfWork.AnnouncementClassGroups
-                            .GetAllAsync(acg => classGroupIds.Contains(acg.ClassGroupId)))
-                            .Select(acg => acg.AnnouncementId);
-
-                        announcements = (await _unitOfWork.Announcements.GetByIdsAsync(announcementIds))
-                            .Where(a => a.TargetAudience == AudienceType.Guardian || a.TargetAudience == AudienceType.StudentAndGuardian);                            
-                            
-                        break;
-                    }
-
-                case UserType.Student:
-                    {
-                        var student = await _unitOfWork.Students.GetByUserIdAsync(userId)
-                            ?? throw new NotFoundException("Student not found");
-
-                        var classGroupStudent = await _unitOfWork.ClassGroupStudents
-                            .GetByStudentIdAsync(student.Id);
-
-                        if (classGroupStudent is null)
-                        {
-                            announcements = new List<Announcement>();
-                            break;
-                        }
-
-                        var announcementIds = (await _unitOfWork.AnnouncementClassGroups
-                            .GetByClassGroupIdAsync(classGroupStudent.ClassGroupId))
-                            .Select(acg => acg.AnnouncementId);
-
-                        announcements = (await _unitOfWork.Announcements.GetByIdsAsync(announcementIds))
-                            .Where(a => a.TargetAudience == AudienceType.Student || a.TargetAudience == AudienceType.StudentAndGuardian);
-
-                        break;
-                    }
-
-                default:
-                    throw new Exception("Unexpected behavior occurred");
-
-
-            }
-            return _mapper.Map<IEnumerable<AnnouncementResponse>>(announcements);
-        }
-
-        public async Task<AnnouncementResponse> GetByIdAsync(int id)
-        {
-            var announcement = await _unitOfWork.Announcements.GetByIdAsync(id)
-                ?? throw new NotFoundException("Announcement not found");
-
-            return _mapper.Map<AnnouncementResponse>(announcement);
-        }
-
-        public async Task UpdateAsync(int id, UpdateAnnouncementRequest request)
-        {
-            var announcement = await _unitOfWork.Announcements.GetByIdAsync(id)
-                ?? throw new NotFoundException("Announcement not found");
-
-            _mapper.Map(request, announcement);
-            _unitOfWork.Announcements.Update(announcement);
-            await _unitOfWork.SaveChangesAsync();
-        }
+        _mapper.Map(request, announcement);
+        _unitOfWork.Announcements.Update(announcement);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

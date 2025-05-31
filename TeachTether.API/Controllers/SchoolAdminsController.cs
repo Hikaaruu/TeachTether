@@ -4,90 +4,84 @@ using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
-namespace TeachTether.API.Controllers
+namespace TeachTether.API.Controllers;
+
+[Route("api/schools/{schoolId}/[controller]")]
+[ApiController]
+[Authorize(Policy = "RequireSchoolOwner")]
+public class SchoolAdminsController(ISchoolAdminService schoolAdminService, IAuthorizationService authorizationService)
+    : ControllerBase
 {
-    [Route("api/schools/{schoolId}/[controller]")]
-    [ApiController]
-    [Authorize(Policy = "RequireSchoolOwner")]
-    public class SchoolAdminsController : ControllerBase
+    private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly ISchoolAdminService _schoolAdminService = schoolAdminService;
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<SchoolAdminResponse>>> GetAll(int schoolId)
     {
-        private readonly ISchoolAdminService _schoolAdminService;
-        private readonly IAuthorizationService _authorizationService;
+        var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        public SchoolAdminsController(ISchoolAdminService schoolAdminService, IAuthorizationService authorizationService)
-        {
-            _schoolAdminService = schoolAdminService;
-            _authorizationService = authorizationService;
-        }
+        var schoolAdmins = await _schoolAdminService.GetAllBySchoolAsync(schoolId);
+        return Ok(schoolAdmins);
+    }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<SchoolAdminResponse>>> GetAll(int schoolId)
-        {
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpGet("{id}")]
+    public async Task<ActionResult<SchoolAdminResponse>> Get(int id, int schoolId)
+    {
+        var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            var schoolAdmins = await _schoolAdminService.GetAllBySchoolAsync(schoolId);
-            return Ok(schoolAdmins);
-        }
+        var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<SchoolAdminResponse>> Get(int id, int schoolId)
-        {
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        if (schoolAdmin.SchoolId != schoolId)
+            return NotFound();
 
-            var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
+        return Ok(schoolAdmin);
+    }
 
-            if (schoolAdmin.SchoolId != schoolId)
-                return NotFound();
+    [HttpPost]
+    public async Task<ActionResult<CreatedSchoolAdminResponse>> Create(int schoolId,
+        [FromBody] CreateSchoolAdminRequest request)
+    {
+        var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            return Ok(schoolAdmin);
-        }
+        var createdSchoolAdmin = await _schoolAdminService.CreateAsync(request, schoolId);
+        return CreatedAtAction(nameof(Get), new { id = createdSchoolAdmin.Id, schoolId }, createdSchoolAdmin);
+    }
 
-        [HttpPost]
-        public async Task<ActionResult<CreatedSchoolAdminResponse>> Create(int schoolId, [FromBody] CreateSchoolAdminRequest request)
-        {
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int schoolId, int id, UpdateSchoolAdminRequest request)
+    {
+        var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
 
-            var createdSchoolAdmin = await _schoolAdminService.CreateAsync(request, schoolId);
-            return CreatedAtAction(nameof(Get), new { id = createdSchoolAdmin.Id, schoolId }, createdSchoolAdmin);
+        var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        }
+        if (schoolAdmin.SchoolId != schoolId)
+            return NotFound();
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int schoolId, int id, UpdateSchoolAdminRequest request)
-        {
-            var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
+        await _schoolAdminService.UpdateAsync(id, request);
+        return NoContent();
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int schoolId, int id)
+    {
+        var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
 
-            if (schoolAdmin.SchoolId != schoolId)
-                return NotFound();
+        var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-            await _schoolAdminService.UpdateAsync(id, request);
-            return NoContent();
-        }
+        if (schoolAdmin.SchoolId != schoolId)
+            return NotFound();
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int schoolId, int id)
-        {
-            var schoolAdmin = await _schoolAdminService.GetByIdAsync(id);
-
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
-
-            if (schoolAdmin.SchoolId != schoolId)
-                return NotFound();
-
-            await _schoolAdminService.DeleteAsync(id);
-            return NoContent();
-        }
+        await _schoolAdminService.DeleteAsync(id);
+        return NoContent();
     }
 }

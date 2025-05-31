@@ -1,8 +1,7 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class CreatedStudentResponse : StudentResponse
 {
-    public class CreatedStudentResponse : StudentResponse
-    {
-        public required string Username { get; set; }
-        public required string Password { get; set; }
-    }
+    public required string Username { get; set; }
+    public required string Password { get; set; }
 }

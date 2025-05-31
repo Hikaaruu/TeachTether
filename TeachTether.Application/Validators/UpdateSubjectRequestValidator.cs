@@ -1,17 +1,16 @@
 ﻿using FluentValidation;
 using TeachTether.Application.DTOs;
 
-namespace TeachTether.Application.Validators
+namespace TeachTether.Application.Validators;
+
+public class UpdateSubjectRequestValidator : AbstractValidator<UpdateSubjectRequest>
 {
-    public class UpdateSubjectRequestValidator : AbstractValidator<UpdateSubjectRequest>
+    public UpdateSubjectRequestValidator()
     {
-        public UpdateSubjectRequestValidator()
-        {
-            RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Subject name is required.")
-                .MinimumLength(3).WithMessage("Subject name must be at least 3 characters long.")
-                .MaximumLength(180).WithMessage("Subject name cannot be longer than 180 characters.")
-                .Matches(@"^[a-zA-Z0-9\s\-_'&.,]+$").WithMessage("Subject name contains invalid characters.");
-        }
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Subject name is required.")
+            .MinimumLength(3).WithMessage("Subject name must be at least 3 characters long.")
+            .MaximumLength(180).WithMessage("Subject name cannot be longer than 180 characters.")
+            .Matches(@"^[a-zA-Z0-9\s\-_'&.,]+$").WithMessage("Subject name contains invalid characters.");
     }
 }

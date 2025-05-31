@@ -1,117 +1,109 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using TeachTether.Application.Authorization.Requirements;
 using TeachTether.Application.DTOs;
 using TeachTether.Application.Interfaces.Services;
 
-namespace TeachTether.API.Controllers
+namespace TeachTether.API.Controllers;
+
+[Route("api/schools/{schoolId}/classgroups/{classGroupId}/subjects/{subjectId}/[controller]")]
+[ApiController]
+[Authorize]
+public class ClassAssignmentsController(
+    IClassGroupService classGroupService,
+    ISchoolService schoolService,
+    IAuthorizationService authorizationService,
+    IClassAssignmentService classAssignmentService,
+    ISubjectService subjectService,
+    ITeacherService teacherService) : ControllerBase
 {
-    [Route("api/schools/{schoolId}/classgroups/{classGroupId}/subjects/{subjectId}/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class ClassAssignmentsController : ControllerBase
+    private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly IClassAssignmentService _classAssignmentService = classAssignmentService;
+    private readonly IClassGroupService _classGroupService = classGroupService;
+    private readonly ISchoolService _schoolService = schoolService;
+    private readonly ISubjectService _subjectService = subjectService;
+    private readonly ITeacherService _teacherService = teacherService;
+
+    [HttpPost]
+    [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+    public async Task<IActionResult> Create(int schoolId, int classGroupId, int subjectId,
+        [FromBody] CreateClassAssignmentRequest request)
     {
-        private readonly IClassGroupService _classGroupService;
-        private readonly ISchoolService _schoolService;
-        private readonly IAuthorizationService _authorizationService;
-        private readonly IClassAssignmentService _classAssignmentService;
-        private readonly ISubjectService _subjectService;
-        private readonly ITeacherService _teacherService;
+        _ = await _schoolService.GetByIdAsync(schoolId);
+        var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
+        var subject = await _subjectService.GetByIdAsync(subjectId);
+        var teacher = await _teacherService.GetByIdAsync(request.TeacherId);
+        if (classGroup.SchoolId != schoolId ||
+            subject.SchoolId != schoolId ||
+            teacher.SchoolId != schoolId)
+            return NotFound();
 
-        public ClassAssignmentsController(IClassGroupService classGroupService, ISchoolService schoolService, IAuthorizationService authorizationService, IClassAssignmentService classAssignmentService, ISubjectService subjectService, ITeacherService teacherService)
-        {
-            _classGroupService = classGroupService;
-            _authorizationService = authorizationService;
-            _schoolService = schoolService;
-            _classAssignmentService = classAssignmentService;
-            _subjectService = subjectService;
-            _teacherService = teacherService;
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpPost]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<IActionResult> Create(int schoolId, int classGroupId, int subjectId, [FromBody] CreateClassAssignmentRequest request)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
-            var subject = await _subjectService.GetByIdAsync(subjectId);
-            var teacher = await _teacherService.GetByIdAsync(request.TeacherId);
-            if (classGroup.SchoolId != schoolId ||
-                subject.SchoolId != schoolId ||
-                teacher.SchoolId != schoolId)
-            {
-                return NotFound();
-            }
+        await _classAssignmentService.CreateAsync(request, classGroupId, subjectId);
+        return NoContent();
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpDelete("{teacherId}")]
+    [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
+    public async Task<IActionResult> Delete(int schoolId, int classGroupId, int subjectId, int teacherId)
+    {
+        _ = await _schoolService.GetByIdAsync(schoolId);
+        var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
+        var subject = await _subjectService.GetByIdAsync(subjectId);
+        var teacher = await _teacherService.GetByIdAsync(teacherId);
+        if (classGroup.SchoolId != schoolId ||
+            subject.SchoolId != schoolId ||
+            teacher.SchoolId != schoolId)
+            return NotFound();
 
-            await _classAssignmentService.CreateAsync(request, classGroupId, subjectId);
-            return NoContent();
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpDelete("{teacherId}")]
-        [Authorize(Policy = "RequireSchoolOwnerOrAdmin")]
-        public async Task<IActionResult> Delete(int schoolId, int classGroupId, int subjectId, int teacherId)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
-            var subject = await _subjectService.GetByIdAsync(subjectId);
-            var teacher = await _teacherService.GetByIdAsync(teacherId);
-            if (classGroup.SchoolId != schoolId ||
-                subject.SchoolId != schoolId ||
-                teacher.SchoolId != schoolId)
-            {
-                return NotFound();
-            }
+        await _classAssignmentService.DeleteAsync(classGroupId, subjectId, teacherId);
+        return NoContent();
+    }
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, schoolId, new CanManageSchoolEntitiesRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<TeacherResponse>>> GetTeachers(int schoolId, int classGroupId,
+        int subjectId)
+    {
+        _ = await _schoolService.GetByIdAsync(schoolId);
+        var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
+        var subject = await _subjectService.GetByIdAsync(subjectId);
+        if (classGroup.SchoolId != schoolId ||
+            subject.SchoolId != schoolId)
+            return NotFound();
 
-            await _classAssignmentService.DeleteAsync(classGroupId, subjectId, teacherId);
-            return NoContent();
-        }
+        var authResult =
+            await _authorizationService.AuthorizeAsync(User, classGroupId, new CanViewClassAssignmentsRequirement());
+        if (!authResult.Succeeded)
+            return Forbid();
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TeacherResponse>>> GetTeachers(int schoolId, int classGroupId, int subjectId)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var classGroup = await _classGroupService.GetByIdAsync(classGroupId);
-            var subject = await _subjectService.GetByIdAsync(subjectId);
-            if (classGroup.SchoolId != schoolId ||
-                subject.SchoolId != schoolId)
-            {
-                return NotFound();
-            }
+        var teachers = await _teacherService.GetAllByClassGroupSubjectAsync(classGroupId, subjectId);
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, classGroupId, new CanViewClassAssignmentsRequirement());
-            if (!authResult.Succeeded)
-                return Forbid();
+        return Ok(teachers);
+    }
 
-            var teachers = await _teacherService.GetAllByClassGroupSubjectAsync(classGroupId, subjectId);
+    [HttpGet("/api/schools/{schoolId}/teachers/{teacherId}/ClassAssignments")]
+    [Authorize(Policy = "RequireTeacher")]
+    public async Task<ActionResult<IEnumerable<ClassAssignmentResponse>>> GetForTeacher(int schoolId, int teacherId)
+    {
+        var school = await _schoolService.GetByIdAsync(schoolId);
+        var teacher = await _teacherService.GetByIdAsync(teacherId);
+        if (teacher.SchoolId != school.Id)
+            return NotFound();
 
-            return Ok(teachers);
-        }
+        if (teacherId.ToString() != User.FindFirstValue("entity_id"))
+            return Forbid();
 
-        [HttpGet("/api/schools/{schoolId}/teachers/{teacherId}/ClassAssignments")]
-        [Authorize(Policy = "RequireTeacher")]
-        public async Task<ActionResult<IEnumerable<ClassAssignmentResponse>>> GetForTeacher(int schoolId, int teacherId)
-        {
-            var school = await _schoolService.GetByIdAsync(schoolId);
-            var teacher = await _teacherService.GetByIdAsync(teacherId);
-            if (teacher.SchoolId != school.Id)
-                return NotFound();
-
-            if (teacherId.ToString() != User.FindFirstValue("entity_id"))
-                return Forbid();
-
-            var assignments = await _classAssignmentService.GetByTeacherAsync(teacherId);
-            return Ok(assignments);
-        }
-
-
+        var assignments = await _classAssignmentService.GetByTeacherAsync(teacherId);
+        return Ok(assignments);
     }
 }

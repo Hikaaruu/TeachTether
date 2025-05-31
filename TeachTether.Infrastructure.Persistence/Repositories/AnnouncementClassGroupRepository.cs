@@ -3,26 +3,24 @@ using TeachTether.Application.Interfaces.Repositories;
 using TeachTether.Domain.Entities;
 using TeachTether.Infrastructure.Persistence.Data;
 
-namespace TeachTether.Infrastructure.Persistence.Repositories
+namespace TeachTether.Infrastructure.Persistence.Repositories;
+
+public class AnnouncementClassGroupRepository(ApplicationDbContext context)
+    : Repository<AnnouncementClassGroup>(context), IAnnouncementClassGroupRepository
 {
-    public class AnnouncementClassGroupRepository : Repository<AnnouncementClassGroup>, IAnnouncementClassGroupRepository
+    public async Task<IEnumerable<AnnouncementClassGroup>> GetByAnnouncementIdAsync(int announcementId)
     {
-        public AnnouncementClassGroupRepository(ApplicationDbContext context) : base(context) { }
+        return await _dbSet
+            .AsNoTracking()
+            .Where(acg => acg.AnnouncementId == announcementId)
+            .ToListAsync();
+    }
 
-        public async Task<IEnumerable<AnnouncementClassGroup>> GetByAnnouncementIdAsync(int announcementId)
-        {
-            return await _dbSet
-                .AsNoTracking()
-                .Where(acg => acg.AnnouncementId == announcementId)
-                .ToListAsync();
-        }
-
-        public  async Task<IEnumerable<AnnouncementClassGroup>> GetByClassGroupIdAsync(int classGroupId)
-        {
-            return await _dbSet
-                .AsNoTracking()
-                .Where(acg => acg.ClassGroupId == classGroupId)
-                .ToListAsync();
-        }
+    public async Task<IEnumerable<AnnouncementClassGroup>> GetByClassGroupIdAsync(int classGroupId)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Where(acg => acg.ClassGroupId == classGroupId)
+            .ToListAsync();
     }
 }

@@ -2,14 +2,13 @@
 using TeachTether.Application.DTOs;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Mapping
+namespace TeachTether.Application.Mapping;
+
+public class MessageThreadMappingProfile : Profile
 {
-    public class MessageThreadMappingProfile : Profile
+    public MessageThreadMappingProfile()
     {
-        public MessageThreadMappingProfile()
-        {
-            CreateMap<CreateMessageThreadRequest, MessageThread>();
-            CreateMap<MessageThread, MessageThreadResponse>();
-        }
+        CreateMap<CreateMessageThreadRequest, MessageThread>();
+        CreateMap<MessageThread, MessageThreadResponse>();
     }
 }

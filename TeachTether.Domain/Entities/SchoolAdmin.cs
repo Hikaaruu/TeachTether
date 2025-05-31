@@ -1,9 +1,8 @@
-﻿namespace TeachTether.Domain.Entities
+﻿namespace TeachTether.Domain.Entities;
+
+public class SchoolAdmin
 {
-    public class SchoolAdmin
-    {
-        public int Id { get; set; }
-        public required string UserId { get; set; } 
-        public int SchoolId { get; set; }
-    }
+    public int Id { get; set; }
+    public required string UserId { get; set; }
+    public int SchoolId { get; set; }
 }

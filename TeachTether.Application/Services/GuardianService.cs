@@ -7,207 +7,202 @@ using TeachTether.Application.Interfaces.Services;
 using TeachTether.Application.Interfaces.Services.DeletionHelpers;
 using TeachTether.Domain.Entities;
 
-namespace TeachTether.Application.Services
+namespace TeachTether.Application.Services;
+
+public class GuardianService(
+    IUnitOfWork unitOfWork,
+    IUserService userService,
+    IMapper mapper,
+    IGuardianDeletionHelper guardianDeletionHelper) : IGuardianService
 {
-    public class GuardianService : IGuardianService
+    private readonly IGuardianDeletionHelper _guardianDeletionHelper = guardianDeletionHelper;
+    private readonly IMapper _mapper = mapper;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IUserService _userService = userService;
+
+    public async Task<CreatedGuardianResponse> CreateAsync(CreateGuardianRequest request, int schoolId)
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IUserService _userService;
-        private readonly IMapper _mapper;
-        private readonly IGuardianDeletionHelper _guardianDeletionHelper;
+        var (user, password) = await _userService.CreateAsync(request.User, UserType.Guardian);
 
-        public GuardianService(IUnitOfWork unitOfWork, IUserService userService, IMapper mapper, IGuardianDeletionHelper guardianDeletionHelper)
+        var guardian = new Guardian
         {
-            _unitOfWork = unitOfWork;
-            _userService = userService;
-            _mapper = mapper;
-            _guardianDeletionHelper = guardianDeletionHelper;
-        }
+            UserId = user.Id!,
+            DateOfBirth = request.DateOfBirth,
+            SchoolId = schoolId
+        };
 
-        public async Task<CreatedGuardianResponse> CreateAsync(CreateGuardianRequest request, int schoolId)
+        await _unitOfWork.Guardians.AddAsync(guardian);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new CreatedGuardianResponse
         {
-            (var user, var password) = await _userService.CreateAsync(request.User, UserType.Guardian);
+            User = _mapper.Map<UserDto>(user),
+            Id = guardian.Id,
+            Username = user.UserName,
+            Password = password,
+            SchoolId = guardian.SchoolId,
+            DateOfBirth = guardian.DateOfBirth
+        };
+    }
 
-            var guardian = new Guardian
-            {
-                UserId = user.Id!,
-                DateOfBirth = request.DateOfBirth,
-                SchoolId = schoolId
-            };
+    public async Task DeleteAsync(int id)
+    {
+        await _guardianDeletionHelper.DeleteGuardianAsync(id);
+    }
 
-            await _unitOfWork.Guardians.AddAsync(guardian);
-            await _unitOfWork.SaveChangesAsync();
+    public async Task<IEnumerable<GuardianResponse>> GetAllBySchoolAsync(int schoolId)
+    {
+        var guardians = await _unitOfWork.Guardians.GetBySchoolIdAsync(schoolId);
 
-            return new CreatedGuardianResponse
+        var userIds = guardians.Select(s => s.UserId);
+        var users = await _userService.GetByIdsAsync(userIds);
+        var userMap = users
+            .Where(u => u.Id != null)
+            .ToDictionary(u => u.Id!);
+
+        var result = new List<GuardianResponse>();
+
+        foreach (var guardian in guardians)
+        {
+            if (!userMap.TryGetValue(guardian.UserId, out var user))
+                throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
+
+            var response = new GuardianResponse
             {
                 User = _mapper.Map<UserDto>(user),
                 Id = guardian.Id,
-                Username = user.UserName,
-                Password = password,
                 SchoolId = guardian.SchoolId,
                 DateOfBirth = guardian.DateOfBirth
             };
+
+            result.Add(response);
         }
 
-        public async Task DeleteAsync(int id)
+        return result;
+    }
+
+    public async Task<IEnumerable<GuardianResponse>> GetAllByStudentAsync(int studentId)
+    {
+        var guardianIds = (await _unitOfWork.GuardianStudents
+                .GetByStudentIdAsync(studentId))
+            .Select(gs => gs.GuardianId);
+
+        var guardians = await _unitOfWork.Guardians.GetByIdsAsync(guardianIds);
+
+        var userIds = guardians.Select(s => s.UserId);
+        var users = await _userService.GetByIdsAsync(userIds);
+        var userMap = users
+            .Where(u => u.Id != null)
+            .ToDictionary(u => u.Id!);
+
+        var result = new List<GuardianResponse>();
+
+        foreach (var guardian in guardians)
         {
-            await _guardianDeletionHelper.DeleteGuardianAsync(id);
-        }
+            if (!userMap.TryGetValue(guardian.UserId, out var user))
+                throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
 
-        public async Task<IEnumerable<GuardianResponse>> GetAllBySchoolAsync(int schoolId)
-        {
-            var guardians = await _unitOfWork.Guardians.GetBySchoolIdAsync(schoolId);
-
-            var userIds = guardians.Select(s => s.UserId);
-            var users = await _userService.GetByIdsAsync(userIds);
-            var userMap = users
-                .Where(u => u.Id != null)
-                .ToDictionary(u => u.Id!);
-
-            var result = new List<GuardianResponse>();
-
-            foreach (var guardian in guardians)
+            var response = new GuardianResponse
             {
-                if (!userMap.TryGetValue(guardian.UserId, out var user))
-                    throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
+                User = _mapper.Map<UserDto>(user),
+                Id = guardian.Id,
+                SchoolId = guardian.SchoolId,
+                DateOfBirth = guardian.DateOfBirth
+            };
 
-                var response = new GuardianResponse
-                {
-                    User = _mapper.Map<UserDto>(user),
-                    Id = guardian.Id,
-                    SchoolId = guardian.SchoolId,
-                    DateOfBirth = guardian.DateOfBirth
-                };
-
-                result.Add(response);
-            }
-
-            return result;
+            result.Add(response);
         }
 
-        public async Task<IEnumerable<GuardianResponse>> GetAllByStudentAsync(int studentId)
-        {
-            var guardianIds = (await _unitOfWork.GuardianStudents
-                 .GetByStudentIdAsync(studentId))
-                 .Select(gs => gs.GuardianId);
+        return result;
+    }
 
-            var guardians = await _unitOfWork.Guardians.GetByIdsAsync(guardianIds);
-
-            var userIds = guardians.Select(s => s.UserId);
-            var users = await _userService.GetByIdsAsync(userIds);
-            var userMap = users
-                .Where(u => u.Id != null)
-                .ToDictionary(u => u.Id!);
-
-            var result = new List<GuardianResponse>();
-
-            foreach (var guardian in guardians)
-            {
-                if (!userMap.TryGetValue(guardian.UserId, out var user))
-                    throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
-
-                var response = new GuardianResponse
-                {
-                    User = _mapper.Map<UserDto>(user),
-                    Id = guardian.Id,
-                    SchoolId = guardian.SchoolId,
-                    DateOfBirth = guardian.DateOfBirth
-                };
-
-                result.Add(response);
-            }
-
-            return result;
-        }
-
-        public async Task<IEnumerable<GuardianResponse>> GetAvailableForTeacherAsync(int teacherId)
-        {
-            // Get class groups where the teacher is homeroom teacher
-            var homeClassGroupIds = (await _unitOfWork.ClassGroups
+    public async Task<IEnumerable<GuardianResponse>> GetAvailableForTeacherAsync(int teacherId)
+    {
+        // Get class groups where the teacher is homeroom teacher
+        var homeClassGroupIds = (await _unitOfWork.ClassGroups
                 .GetByHomeroomTeacherIdAsync(teacherId))
-                .Select(cg => cg.Id);
+            .Select(cg => cg.Id);
 
-            // Get class group subject IDs where the teacher is assigned
-            var classGroupSubjectIds = (await _unitOfWork.ClassAssignments
+        // Get class group subject IDs where the teacher is assigned
+        var classGroupSubjectIds = (await _unitOfWork.ClassAssignments
                 .GetByTeacherIdAsync(teacherId))
-                .Select(ca => ca.ClassGroupSubjectId);
+            .Select(ca => ca.ClassGroupSubjectId);
 
-            // Get class group IDs from these classGroupSubjectIds
-            var subjectClassGroupIds = (await _unitOfWork.ClassGroupsSubjects
+        // Get class group IDs from these classGroupSubjectIds
+        var subjectClassGroupIds = (await _unitOfWork.ClassGroupsSubjects
                 .GetByIdsAsync(classGroupSubjectIds))
-                .Select(cgs => cgs.ClassGroupId);
+            .Select(cgs => cgs.ClassGroupId);
 
-            // Combine class group IDs
-            var allClassGroupIds = homeClassGroupIds.Union(subjectClassGroupIds).Distinct();
+        // Combine class group IDs
+        var allClassGroupIds = homeClassGroupIds.Union(subjectClassGroupIds).Distinct();
 
-            // Get student IDs from those class groups
-            var studentIds = (await _unitOfWork.ClassGroupStudents
+        // Get student IDs from those class groups
+        var studentIds = (await _unitOfWork.ClassGroupStudents
                 .GetAllAsync(cgs => allClassGroupIds.Contains(cgs.ClassGroupId)))
-                .Select(cgs => cgs.StudentId)
-                .Distinct();
+            .Select(cgs => cgs.StudentId)
+            .Distinct();
 
-            // Get guardian IDs for those students
-            var guardianIds = (await _unitOfWork.GuardianStudents
+        // Get guardian IDs for those students
+        var guardianIds = (await _unitOfWork.GuardianStudents
                 .GetAllAsync(gs => studentIds.Contains(gs.StudentId)))
-                .Select(gs => gs.GuardianId)
-                .Distinct();
+            .Select(gs => gs.GuardianId)
+            .Distinct();
 
-            var guardians = await _unitOfWork.Guardians.GetByIdsAsync(guardianIds);
+        var guardians = await _unitOfWork.Guardians.GetByIdsAsync(guardianIds);
 
-            var userIds = guardians.Select(s => s.UserId);
-            var users = await _userService.GetByIdsAsync(userIds);
-            var userMap = users
-                .Where(u => u.Id != null)
-                .ToDictionary(u => u.Id!);
+        var userIds = guardians.Select(s => s.UserId);
+        var users = await _userService.GetByIdsAsync(userIds);
+        var userMap = users
+            .Where(u => u.Id != null)
+            .ToDictionary(u => u.Id!);
 
-            var result = new List<GuardianResponse>();
+        var result = new List<GuardianResponse>();
 
-            foreach (var guardian in guardians)
-            {
-                if (!userMap.TryGetValue(guardian.UserId, out var user))
-                    throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
-
-                var response = new GuardianResponse
-                {
-                    User = _mapper.Map<UserDto>(user),
-                    Id = guardian.Id,
-                    SchoolId = guardian.SchoolId,
-                    DateOfBirth = guardian.DateOfBirth
-                };
-
-                result.Add(response);
-            }
-
-            return result;
-        }
-
-
-        public async Task<GuardianResponse> GetByIdAsync(int id)
+        foreach (var guardian in guardians)
         {
-            var guardian = await _unitOfWork.Guardians.GetByIdAsync(id)
-                ?? throw new NotFoundException("Guardian not found");
+            if (!userMap.TryGetValue(guardian.UserId, out var user))
+                throw new Exception($"User data can not be found for guardian with id = {guardian.Id}");
 
-            var user = await _userService.GetByIdAsync(guardian.UserId);
-
-            return new GuardianResponse()
+            var response = new GuardianResponse
             {
                 User = _mapper.Map<UserDto>(user),
                 Id = guardian.Id,
                 SchoolId = guardian.SchoolId,
                 DateOfBirth = guardian.DateOfBirth
             };
+
+            result.Add(response);
         }
 
-        public async Task UpdateAsync(int id, UpdateGuardianRequest request)
+        return result;
+    }
+
+
+    public async Task<GuardianResponse> GetByIdAsync(int id)
+    {
+        var guardian = await _unitOfWork.Guardians.GetByIdAsync(id)
+                       ?? throw new NotFoundException("Guardian not found");
+
+        var user = await _userService.GetByIdAsync(guardian.UserId);
+
+        return new GuardianResponse
         {
-            var guardian = await _unitOfWork.Guardians.GetByIdAsync(id)
-                ?? throw new NotFoundException("Guardian not found");
+            User = _mapper.Map<UserDto>(user),
+            Id = guardian.Id,
+            SchoolId = guardian.SchoolId,
+            DateOfBirth = guardian.DateOfBirth
+        };
+    }
 
-            await _userService.UpdateAsync(guardian.UserId, request.User);
+    public async Task UpdateAsync(int id, UpdateGuardianRequest request)
+    {
+        var guardian = await _unitOfWork.Guardians.GetByIdAsync(id)
+                       ?? throw new NotFoundException("Guardian not found");
 
-            guardian.DateOfBirth = request.DateOfBirth;
-            _unitOfWork.Guardians.Update(guardian);
-            await _unitOfWork.SaveChangesAsync();
-        }
+        await _userService.UpdateAsync(guardian.UserId, request.User);
+
+        guardian.DateOfBirth = request.DateOfBirth;
+        _unitOfWork.Guardians.Update(guardian);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

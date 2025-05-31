@@ -2,17 +2,16 @@
 using TeachTether.Application.Common.Models;
 using TeachTether.Application.DTOs;
 
-namespace TeachTether.Application.Validators
-{
-    public class UpdateTeacherRequestValidator : AbstractValidator<UpdateTeacherRequest>
-    {
-        public UpdateTeacherRequestValidator(IValidator<UpdateUserDto> userValidator)
-        {
-            RuleFor(x => x.User).SetValidator(userValidator);
+namespace TeachTether.Application.Validators;
 
-            RuleFor(x => x.DateOfBirth)
-                .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today.AddYears(-18)))
-                .WithMessage("Must be at least 18 years old.");
-        }
+public class UpdateTeacherRequestValidator : AbstractValidator<UpdateTeacherRequest>
+{
+    public UpdateTeacherRequestValidator(IValidator<UpdateUserDto> userValidator)
+    {
+        RuleFor(x => x.User).SetValidator(userValidator);
+
+        RuleFor(x => x.DateOfBirth)
+            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today.AddYears(-18)))
+            .WithMessage("Must be at least 18 years old.");
     }
 }

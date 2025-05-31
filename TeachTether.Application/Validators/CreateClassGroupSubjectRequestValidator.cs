@@ -1,15 +1,14 @@
 ﻿using FluentValidation;
 using TeachTether.Application.DTOs;
 
-namespace TeachTether.Application.Validators
+namespace TeachTether.Application.Validators;
+
+public class CreateClassGroupSubjectRequestValidator : AbstractValidator<CreateClassGroupSubjectRequest>
 {
-    public class CreateClassGroupSubjectRequestValidator : AbstractValidator<CreateClassGroupSubjectRequest>
+    public CreateClassGroupSubjectRequestValidator()
     {
-        public CreateClassGroupSubjectRequestValidator()
-        {
-            RuleFor(x => x.SubjectId)
-                .GreaterThan(0)
-                .WithMessage("SubjectId must be a positive integer.");
-        }
+        RuleFor(x => x.SubjectId)
+            .GreaterThan(0)
+            .WithMessage("SubjectId must be a positive integer.");
     }
 }

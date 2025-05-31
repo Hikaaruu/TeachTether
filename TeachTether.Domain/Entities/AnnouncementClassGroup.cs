@@ -1,9 +1,8 @@
-﻿namespace TeachTether.Domain.Entities
+﻿namespace TeachTether.Domain.Entities;
+
+public class AnnouncementClassGroup
 {
-    public class AnnouncementClassGroup
-    {
-        public int Id { get; set; }
-        public int AnnouncementId { get; set; }
-        public int ClassGroupId { get; set; }
-    }
+    public int Id { get; set; }
+    public int AnnouncementId { get; set; }
+    public int ClassGroupId { get; set; }
 }

@@ -1,7 +1,6 @@
-﻿namespace TeachTether.Application.DTOs
+﻿namespace TeachTether.Application.DTOs;
+
+public class CreateClassGroupSubjectRequest
 {
-    public class CreateClassGroupSubjectRequest
-    {
-        public int SubjectId { get; set; }
-    }
+    public int SubjectId { get; set; }
 }
