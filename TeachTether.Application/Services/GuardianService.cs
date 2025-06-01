@@ -118,31 +118,25 @@ public class GuardianService(
 
     public async Task<IEnumerable<GuardianResponse>> GetAvailableForTeacherAsync(int teacherId)
     {
-        // Get class groups where the teacher is homeroom teacher
         var homeClassGroupIds = (await _unitOfWork.ClassGroups
                 .GetByHomeroomTeacherIdAsync(teacherId))
             .Select(cg => cg.Id);
 
-        // Get class group subject IDs where the teacher is assigned
         var classGroupSubjectIds = (await _unitOfWork.ClassAssignments
                 .GetByTeacherIdAsync(teacherId))
             .Select(ca => ca.ClassGroupSubjectId);
 
-        // Get class group IDs from these classGroupSubjectIds
         var subjectClassGroupIds = (await _unitOfWork.ClassGroupsSubjects
                 .GetByIdsAsync(classGroupSubjectIds))
             .Select(cgs => cgs.ClassGroupId);
 
-        // Combine class group IDs
         var allClassGroupIds = homeClassGroupIds.Union(subjectClassGroupIds).Distinct();
 
-        // Get student IDs from those class groups
         var studentIds = (await _unitOfWork.ClassGroupStudents
                 .GetAllAsync(cgs => allClassGroupIds.Contains(cgs.ClassGroupId)))
             .Select(cgs => cgs.StudentId)
             .Distinct();
 
-        // Get guardian IDs for those students
         var guardianIds = (await _unitOfWork.GuardianStudents
                 .GetAllAsync(gs => studentIds.Contains(gs.StudentId)))
             .Select(gs => gs.GuardianId)

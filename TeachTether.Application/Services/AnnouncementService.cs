@@ -47,7 +47,6 @@ public class AnnouncementService(
         await _announcementDeletionHelper.DeleteAnnouncementAsync(id);
     }
 
-    //rewrite
     public async Task<IEnumerable<AnnouncementResponse>> GetAllBySchoolId(int schoolId)
     {
         var announcements = await _unitOfWork.Announcements.GetAllAsync();

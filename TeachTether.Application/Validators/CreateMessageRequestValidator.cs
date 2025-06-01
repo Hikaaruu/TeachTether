@@ -21,7 +21,6 @@ public class CreateMessageRequestValidator : AbstractValidator<CreateMessageRequ
         RegexOptions.IgnoreCase | RegexOptions.Compiled, TimeSpan.FromMilliseconds(100)
     );
 
-    // Safe filename pattern (alphanumeric + limited symbols, no path traversal)
     private static readonly Regex SafeFilenamePattern = new(
         @"^[\w\-. ]{1,255}$",
         RegexOptions.Compiled,

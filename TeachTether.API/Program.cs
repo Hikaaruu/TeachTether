@@ -35,7 +35,6 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
 
         builder.Services.AddFluentValidationAutoValidation()
             .AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
@@ -48,7 +47,6 @@ public class Program
                     .AllowAnyHeader());
         });
         builder.Services.AddControllers();
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -239,7 +237,6 @@ public class Program
 
         app.UseCors("AllowFrontend");
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();

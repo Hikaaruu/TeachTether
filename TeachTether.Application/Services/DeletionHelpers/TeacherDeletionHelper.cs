@@ -22,7 +22,6 @@ public class TeacherDeletionHelper(
         var teacher = await _unitOfWork.Teachers.GetByIdAsync(id)
                       ?? throw new NotFoundException("Teacher not found");
 
-        //WARNING
         var cg = await _unitOfWork.ClassGroups.GetByHomeroomTeacherIdAsync(id);
         if (cg.Any())
             throw new BadRequestException("Teacher is assigned to one of class groups as homeroom teacher");
