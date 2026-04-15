@@ -121,7 +121,7 @@ public class Program
 
         builder.Services.AddSignalR();
 
-        builder.Services.AddAutoMapper(typeof(UserMappingProfile));
+        builder.Services.AddAutoMapper(_ => { }, typeof(UserMappingProfile));
 
         builder.Services.AddScoped<IAuthorizationHandler, CanCreateAnnouncementHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, CanCreateMessageHandler>();
