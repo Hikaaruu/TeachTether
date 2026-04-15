@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using PasswordGenerator;
 using TeachTether.Application.Common.Interfaces;
+using Unidecode.NET;
 
 namespace TeachTether.Application.Common.Services;
 
@@ -14,12 +15,14 @@ public class CredentialsGenerator : ICredentialsGenerator
 
     public string GenerateUsername(string firstName, string? middleName, string lastName)
     {
-        var baseUsername =
+        var rawUsername =
             $"{SafeSlice(firstName, 20)}.{(string.IsNullOrWhiteSpace(middleName) ? "" : middleName[0] + ".")}{SafeSlice(lastName, 20)}";
-        baseUsername = Regex.Replace(baseUsername.ToLowerInvariant(), @"[^a-z.]", "");
+
+        var transliterated = rawUsername.Unidecode();
+        var sanitized = Regex.Replace(transliterated.ToLowerInvariant(), "[^a-z.]", "");
 
         var uniqueSuffix = Guid.NewGuid().ToString("N")[..6];
-        return $"{baseUsername}_{uniqueSuffix}";
+        return $"{sanitized}_{uniqueSuffix}";
     }
 
     private static string SafeSlice(string input, int length)

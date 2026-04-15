@@ -12,8 +12,10 @@ public class CreateClassGroupRequestValidator : AbstractValidator<CreateClassGro
             .WithMessage("Grade year must be between 1 and 12.");
 
         RuleFor(x => x.Section)
-            .Must(c => c is >= 'A' and <= 'Z')
-            .WithMessage("Section must be an uppercase letter A–Z.");
+            .Must(c => (c >= 'A' && c <= 'Z') ||
+                       (c >= 'А' && c <= 'Я') ||
+                       "ІЇЄҐ".Contains(c))
+            .WithMessage("Section must be an uppercase Latin or Cyrillic letter.");
 
         RuleFor(x => x.HomeroomTeacherId)
             .GreaterThan(0)

@@ -28,13 +28,19 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
             .Matches(@"\W").WithMessage("Password must contain at least one non-alphanumeric character.");
 
         RuleFor(x => x.FirstName)
-            .NotEmpty().MaximumLength(50).Matches("^[A-Za-z' -]+$");
+            .NotEmpty().WithMessage("First name is required.")
+            .MaximumLength(50).WithMessage("First name cannot be longer than 50 characters.")
+            .Matches(@"^[\p{L}' \-]+$").WithMessage("First name contains invalid characters.");
 
         RuleFor(x => x.LastName)
-            .NotEmpty().MaximumLength(50).Matches("^[A-Za-z' -]+$");
+            .NotEmpty().WithMessage("Last name is required.")
+            .MaximumLength(50).WithMessage("Last name cannot be longer than 50 characters.")
+            .Matches(@"^[\p{L}' \-]+$").WithMessage("Last name contains invalid characters.");
 
         RuleFor(x => x.MiddleName)
-            .NotEmpty().MaximumLength(50).Matches("^[A-Za-z' -]+$")
+            .NotEmpty().WithMessage("Middle name is required.")
+            .MaximumLength(50).WithMessage("Middle name cannot be longer than 50 characters.")
+            .Matches(@"^[\p{L}' \-]+$").WithMessage("Middle name contains invalid characters.")
             .When(x => x.MiddleName is not null);
 
         RuleFor(x => x.Sex)
