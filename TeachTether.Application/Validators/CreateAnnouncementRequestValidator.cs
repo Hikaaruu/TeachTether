@@ -9,7 +9,7 @@ public class CreateAnnouncementRequestValidator : AbstractValidator<CreateAnnoun
     private const string SafeTextPattern = @"^[\p{L}\p{N}\p{P}\p{Zs}]+$";
 
     private static readonly string AllowedAudiences =
-        string.Join(", ", Enum.GetNames<GradeType>());
+        string.Join(", ", Enum.GetNames<AudienceType>());
 
     public CreateAnnouncementRequestValidator()
     {
