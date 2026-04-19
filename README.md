@@ -27,6 +27,7 @@ This system serves as a comprehensive backend infrastructure, seamlessly managin
 * **ASP.NET Core** (.NET 8)
 * **Entity Framework Core** (Code-First Migrations)
 * **SQL Server**
+* **ASP.NET Identity**
 
 **Architecture & Patterns**
 * **Clean Architecture**
@@ -58,6 +59,12 @@ This structure ensures separation of concerns, testability, and scalability.
 
 ---
 
+## 🗄️ Database Schema
+
+The relational database schema is designed to efficiently handle the complex school ecosystem, including hierarchical roles, class assignments, analytics tracking, and instant messaging.
+
+![Database Entity-Relationship Diagram](docs/db-diagram.png)
+
 ## 🧠 Engineering Highlights
 
 - Implemented **policy-based authorization** with custom requirements and handlers for fine-grained access control
@@ -85,7 +92,7 @@ The system models a complete school ecosystem:
 
 Before running the project, ensure you have:
 
-- .NET 8 SDK
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - SQL Server 
 
 ---
