@@ -93,7 +93,7 @@ The system models a complete school ecosystem:
 Before running the project, ensure you have:
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- SQL Server 
+- [SQL Server](https://www.microsoft.com/sql-server/sql-server-downloads)
 
 ---
 
